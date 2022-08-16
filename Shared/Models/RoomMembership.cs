@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace SmartChat.Shared.Models
 {
-    public class Participants
+    public class RoomMembership
     {
         public int Id { get; set; }
         public int ApplicationUserId { get; set; }
