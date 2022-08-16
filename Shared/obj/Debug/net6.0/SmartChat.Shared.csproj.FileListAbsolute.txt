@@ -1,0 +1,11 @@
+C:\Users\steve\source\repos\SmartChat\SmartChat\Shared\bin\Debug\net6.0\SmartChat.Shared.deps.json
+C:\Users\steve\source\repos\SmartChat\SmartChat\Shared\bin\Debug\net6.0\SmartChat.Shared.dll
+C:\Users\steve\source\repos\SmartChat\SmartChat\Shared\bin\Debug\net6.0\ref\SmartChat.Shared.dll
+C:\Users\steve\source\repos\SmartChat\SmartChat\Shared\bin\Debug\net6.0\SmartChat.Shared.pdb
+C:\Users\steve\source\repos\SmartChat\SmartChat\Shared\obj\Debug\net6.0\SmartChat.Shared.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\steve\source\repos\SmartChat\SmartChat\Shared\obj\Debug\net6.0\SmartChat.Shared.AssemblyInfoInputs.cache
+C:\Users\steve\source\repos\SmartChat\SmartChat\Shared\obj\Debug\net6.0\SmartChat.Shared.AssemblyInfo.cs
+C:\Users\steve\source\repos\SmartChat\SmartChat\Shared\obj\Debug\net6.0\SmartChat.Shared.csproj.CoreCompileInputs.cache
+C:\Users\steve\source\repos\SmartChat\SmartChat\Shared\obj\Debug\net6.0\SmartChat.Shared.dll
+C:\Users\steve\source\repos\SmartChat\SmartChat\Shared\obj\Debug\net6.0\ref\SmartChat.Shared.dll
+C:\Users\steve\source\repos\SmartChat\SmartChat\Shared\obj\Debug\net6.0\SmartChat.Shared.pdb
