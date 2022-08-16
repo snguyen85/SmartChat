@@ -7,12 +7,15 @@ using System.Threading.Tasks;
 namespace SmartChat.Shared.Models
 {
     /// <summary>
-    /// Chat room messages
+    /// Direct messages between two users
     /// </summary>
-    public class Groups
+    public class DirectMessage
     {
         public int Id { get; set; }
-        public int RoomId { get; set; }
+        // intended recipeient
+        public int ToId { get; set; }
+        // author
+        public int FromId { get; set; }
         public int MessageId { get; set; }
     }
 }
