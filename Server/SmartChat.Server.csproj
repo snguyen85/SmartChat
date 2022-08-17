@@ -12,8 +12,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\SmartChat.Data.Migrations\SmartChat.Data.Migrations.csproj" />
     <ProjectReference Include="..\Client\SmartChat.Client.csproj" />
+    <ProjectReference Include="..\Migrations\SmartChat.Data.Migrations.csproj" />
     <ProjectReference Include="..\Shared\SmartChat.Shared.csproj" />
   </ItemGroup>
 

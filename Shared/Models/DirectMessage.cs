@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -12,10 +13,10 @@ namespace SmartChat.Shared.Models
     public class DirectMessage
     {
         public int Id { get; set; }
-        // intended recipeient
-        public int ToId { get; set; }
+        // intended recipient
+        public string ToUserId { get; set; }
         // author
-        public int FromId { get; set; }
-        public int MessageId { get; set; }
+        public string FromUserId { get; set; }
+        public long MessageId { get; set; }
     }
 }
