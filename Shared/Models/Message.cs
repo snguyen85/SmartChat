@@ -11,5 +11,6 @@ namespace SmartChat.Shared.Models
         public long Id { get; set; }
         public string Content { get; set; }
         public DateTime Created { get; set; }
+        public string AuthorId { get; set; }
     }
 }

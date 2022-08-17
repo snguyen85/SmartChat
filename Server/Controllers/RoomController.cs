@@ -1,6 +1,10 @@
+using Dapper;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.SqlClient;
 using SmartChat.Shared;
+using SmartChat.Shared.Models;
 
 namespace SmartChat.Server.Controllers
 {
@@ -10,10 +14,20 @@ namespace SmartChat.Server.Controllers
     public class RoomController : ControllerBase
     {
         private readonly ILogger<RoomController> _logger;
+        private readonly UserManager<ApplicationUser> _userManager;
+        private readonly string _dbConnection;
 
-        public RoomController(ILogger<RoomController> logger)
+        public RoomController(ILogger<RoomController> logger, IConfiguration configuration, UserManager<ApplicationUser> userManager)
         {
             _logger = logger;
+
+            _dbConnection = configuration.GetConnectionString("DefaultConnection");
+            if (string.IsNullOrEmpty(_dbConnection))
+            {
+                throw new Exception("Please provide database connection strings");
+            }
+
+            _userManager = userManager;
         }
 
         /// <summary>
@@ -24,7 +38,23 @@ namespace SmartChat.Server.Controllers
         [HttpGet("{roomId}/messages")]
         public async Task<IActionResult> Messages(int roomId)
         {
-            return Ok();
+            using (var conn = new SqlConnection(_dbConnection))
+            {
+                await conn.OpenAsync();
+
+                var userId = _userManager.GetUserId(User);
+
+                var results = await conn.QueryAsync("SELECT Messages.Id, UserName, Content" +
+                                                    "FROM Messages" +
+                                                    "INNER JOIN RoomMessages ON Messages.Id = RoomMessages.MessageId" +
+                                                    "INNER JOIN AspNetUsers ON AspNetUsers.Id = @UserId" +
+                                                    "WHERE RoomMessages.RoomId = @RoomId", new
+                                                    {
+                                                        UserId = userId,
+                                                        RoomId = roomId
+                                                    });
+                return Ok(results);
+            }
         }
 
         /// <summary>
@@ -35,7 +65,38 @@ namespace SmartChat.Server.Controllers
         [HttpGet("{roomId}/subscribe")]
         public async Task<IActionResult> Subscribe(int roomId)
         {
-            return Ok();
+            using (var conn = new SqlConnection(_dbConnection))
+            {
+                await conn.OpenAsync();
+
+                // check if membership to room already exists
+                var room = await conn.QuerySingleOrDefaultAsync<Room>("SELECT Id, Name FROM Rooms WHERE Id = @RoomId;", new
+                {
+                    RoomId = roomId
+                });
+
+                if (room == null)
+                {
+                    return BadRequest("Room does not exist");
+                }
+
+                var userId = _userManager.GetUserId(User);
+
+                // if not add to room membership
+                var insertedRow = await conn.ExecuteAsync("INSERT INTO RoomMembers (UserId, RoomId)" +
+                                                          "VALUES (@UserId, @RoomId)", new
+                                                          {
+                                                              RoomId = roomId,
+                                                              UserId = userId
+                                                          });
+
+                if (insertedRow == 0)
+                {
+                    throw new Exception($"Unexpected response adding user: {userId} to room: {roomId}");
+                }
+
+                return Ok();
+            }      
         }
 
         /// <summary>
@@ -46,7 +107,35 @@ namespace SmartChat.Server.Controllers
         [HttpPost("rooms")]
         public async Task<IActionResult> Rooms(string name)
         {
-            return Ok();
+            using (var conn = new SqlConnection(_dbConnection))
+            {
+                await conn.OpenAsync();
+
+                // check if room name already exists
+                var room = await conn.QuerySingleOrDefaultAsync<Room>("SELECT Id, Name FROM Rooms WHERE Name = @Name;", new
+                {
+                    Name = name
+                });
+
+                if (room != null)
+                {
+                    return BadRequest("Room with name already exists");
+                }
+
+                // room name is unique so create room
+                var insertedRow = await conn.ExecuteAsync("INSERT INTO Room (Name)" +
+                                                          "VALUES (@Name)", new
+                                                          {
+                                                              Name = name
+                                                          });
+
+                if (insertedRow == 0)
+                {
+                    throw new Exception($"Unexpected response creating room: {name}");
+                }
+
+                return Ok();
+            }
         }
 
         /// <summary>
@@ -55,9 +144,47 @@ namespace SmartChat.Server.Controllers
         /// <param name="roomId"></param>
         /// <returns></returns>
         [HttpPost("{roomId}/messages")]
-        public async Task<IActionResult> PostMessage(int roomId)
+        public async Task<IActionResult> PostMessage(int roomId, [FromBody]string messageContent)
         {
-            return Ok();
+            using (var conn = new SqlConnection(_dbConnection))
+            {
+                await conn.OpenAsync();
+
+                if (String.IsNullOrEmpty(messageContent))
+                {
+                    return BadRequest("Message content is null or empty");
+                }
+
+                // check if room exists first
+                var room = await conn.QuerySingleOrDefaultAsync<Room>("SELECT Id, Name FROM Rooms WHERE Id = @RoomId;", new
+                {
+                    RoomId = roomId
+                });
+
+                if (room == null)
+                {
+                    return BadRequest("Room does not exist");
+                }
+
+                var userId = _userManager.GetUserId(User);
+
+                var insertedRows = await conn.ExecuteAsync("INSERT INTO Messages (Content, Created, AuthorId)" +
+                                                          "VALUES (@Content, GETUTCDATE() @UserId)" +
+                                                          "INSERT INTO RoomMessages (RoomId, MessageId)" +
+                                                          "VALUES (@RoomId, SCOPE_IDENTITY()", new
+                                                          {
+                                                              UserId = userId,
+                                                              Content = messageContent,
+                                                              RoomId = room.Id
+                                                          });
+
+                if (insertedRows == 0)
+                {
+                    throw new Exception($"Unexpected response posting message to room: {room.Id}");
+                }
+
+                return Ok();
+            }
         }
     }
 }

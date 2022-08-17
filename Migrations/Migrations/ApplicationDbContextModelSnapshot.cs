@@ -238,14 +238,14 @@ namespace SmartChat.Data.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"), 1L, 1);
 
-                    b.Property<int>("FromId")
-                        .HasColumnType("int");
+                    b.Property<string>("FromUserId")
+                        .HasColumnType("nvarchar(450)");
 
-                    b.Property<int>("MessageId")
-                        .HasColumnType("int");
+                    b.Property<long>("MessageId")
+                        .HasColumnType("bigint");
 
-                    b.Property<int>("ToId")
-                        .HasColumnType("int");
+                    b.Property<string>("ToUserId")
+                        .HasColumnType("nvarchar(450)");
 
                     b.HasKey("Id");
 
@@ -297,8 +297,8 @@ namespace SmartChat.Data.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"), 1L, 1);
 
-                    b.Property<int>("ApplicationUserId")
-                        .HasColumnType("int");
+                    b.Property<string>("UserId")
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<int>("RoomId")
                         .HasColumnType("int");
@@ -316,8 +316,8 @@ namespace SmartChat.Data.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"), 1L, 1);
 
-                    b.Property<int>("MessageId")
-                        .HasColumnType("int");
+                    b.Property<long>("MessageId")
+                        .HasColumnType("bigint");
 
                     b.Property<int>("RoomId")
                         .HasColumnType("int");
