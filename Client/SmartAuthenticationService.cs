@@ -27,7 +27,7 @@ namespace SmartChat.Client
         {
             var client = _clientFactory.CreateClient("SmartChat.Server");
 
-            var response = await client.PostAsJsonAsync<RegisterModel>("account", registerModel);
+            var response = await client.PostAsJsonAsync<RegisterModel>("account/register", registerModel);
             var content = await response.Content.ReadAsStringAsync();
             var result = JsonSerializer.Deserialize<RegisterResult>(content);
 
