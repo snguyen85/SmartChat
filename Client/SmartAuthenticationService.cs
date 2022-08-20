@@ -10,22 +10,24 @@ namespace SmartChat.Client
 {
     public class SmartAuthenticationService
     {
-        private readonly HttpClient _httpClient;
+        private readonly IHttpClientFactory _clientFactory;
         private readonly AuthenticationStateProvider _authenticationStateProvider;
         private readonly ILocalStorageService _localStorage;
 
-        public SmartAuthenticationService(HttpClient httpClient,
+        public SmartAuthenticationService(IHttpClientFactory clientFactory,
                            AuthenticationStateProvider authenticationStateProvider,
                            ILocalStorageService localStorage)
         {
-            _httpClient = httpClient;
+            _clientFactory = clientFactory;
             _authenticationStateProvider = authenticationStateProvider;
             _localStorage = localStorage;
         }
 
         public async Task<RegisterResult> Register(RegisterModel registerModel)
         {
-            var response = await _httpClient.PostAsJsonAsync<RegisterModel>("account", registerModel);
+            var client = _clientFactory.CreateClient("SmartChat.Server");
+
+            var response = await client.PostAsJsonAsync<RegisterModel>("account", registerModel);
             var content = await response.Content.ReadAsStringAsync();
             var result = JsonSerializer.Deserialize<RegisterResult>(content);
 
@@ -35,7 +37,10 @@ namespace SmartChat.Client
         public async Task<LoginResult> Login(LoginModel loginModel)
         {
             var loginAsJson = JsonSerializer.Serialize(loginModel);
-            var response = await _httpClient.PostAsync("api/Login", new StringContent(loginAsJson, Encoding.UTF8, "application/json"));
+
+            var client = _clientFactory.CreateClient("SmartChat.Server");
+
+            var response = await client.PostAsync("account/login", new StringContent(loginAsJson, Encoding.UTF8, "application/json"));
             var content = await response.Content.ReadAsStringAsync();
             var serializationOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
             var loginResult = JsonSerializer.Deserialize<LoginResult>(content, serializationOptions);
@@ -43,8 +48,7 @@ namespace SmartChat.Client
             if (response.IsSuccessStatusCode)
             {
                 await _localStorage.SetItemAsync("authToken", loginResult.Token);
-                ((SmartAuthenticationStateProvider)_authenticationStateProvider).AuthenticateUser(loginModel.Email);
-                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("bearer", loginResult.Token);
+                ((SmartAuthenticationStateProvider)_authenticationStateProvider).AuthenticateUser(loginModel.Username);
             }
 
             return loginResult;
@@ -54,7 +58,6 @@ namespace SmartChat.Client
         {
             await _localStorage.RemoveItemAsync("authToken");
             ((SmartAuthenticationStateProvider)_authenticationStateProvider).LogUserOut();
-            _httpClient.DefaultRequestHeaders.Authorization = null;
         }
     }
 }

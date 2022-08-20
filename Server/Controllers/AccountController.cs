@@ -25,10 +25,10 @@ namespace SmartChat.Server.Controllers
             _signInManager = signInManager;
         }
 
-        [HttpPost]
-        public async Task<IActionResult> Post([FromBody] RegisterModel model)
+        [HttpPost("Register")]
+        public async Task<IActionResult> Register([FromBody] RegisterModel model)
         {
-            var newUser = new ApplicationUser { UserName = model.Email, Email = model.Email };
+            var newUser = new ApplicationUser { UserName = model.Username, Email = model.Username };
 
             var result = await _userManager.CreateAsync(newUser, model.Password);
 
@@ -43,16 +43,16 @@ namespace SmartChat.Server.Controllers
             return Ok(new RegisterResult { Successful = true });
         }
 
-        [HttpPost]
+        [HttpPost("Login")]
         public async Task<IActionResult> Login([FromBody] LoginModel login)
         {
-            var result = await _signInManager.PasswordSignInAsync(login.Email, login.Password, false, false);
+            var result = await _signInManager.PasswordSignInAsync(login.Username, login.Password, false, false);
 
             if (!result.Succeeded) return BadRequest(new LoginResult { Successful = false, Error = "Username and password are invalid." });
 
             var claims = new[]
             {
-                new Claim(ClaimTypes.Name, login.Email)
+                new Claim(ClaimTypes.Name, login.Username)
             };
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JwtSecurityKey"]));
