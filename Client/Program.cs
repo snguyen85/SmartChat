@@ -20,9 +20,9 @@ builder.Services.AddScoped(sp => sp.GetRequiredService<IHttpClientFactory>().Cre
 builder.Services.AddOptions();
 builder.Services.AddAuthorizationCore();
 
-builder.Services.AddScoped<SignOutSessionStateManager>();
 builder.Services.AddScoped<AuthenticationStateProvider, SmartAuthenticationStateProvider>();
 builder.Services.AddScoped<SmartAuthenticationService>();
+builder.Services.AddScoped<SmartChatService>();
 builder.Services.AddBlazoredLocalStorage();
 builder.Services.AddMudServices(c => { c.SnackbarConfiguration.PositionClass = Defaults.Classes.Position.BottomRight; });
 

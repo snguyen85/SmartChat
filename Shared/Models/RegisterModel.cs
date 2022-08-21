@@ -11,7 +11,7 @@ namespace SmartChat.Shared.Models
     {
         [Required]
         [EmailAddress]
-        [Display(Name = "Email")]
+        [Display(Name = "Username")]
         public string Username { get; set; }
 
         [Required]

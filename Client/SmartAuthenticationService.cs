@@ -47,7 +47,7 @@ namespace SmartChat.Client
 
             if (response.IsSuccessStatusCode)
             {
-                await _localStorage.SetItemAsync("authToken", loginResult.Token);
+                await _localStorage.SetItemAsync("authToken", loginResult?.Token);
                 ((SmartAuthenticationStateProvider)_authenticationStateProvider).AuthenticateUser(loginModel.Username);
             }
 
@@ -56,8 +56,14 @@ namespace SmartChat.Client
 
         public async Task Logout()
         {
-            await _localStorage.RemoveItemAsync("authToken");
-            ((SmartAuthenticationStateProvider)_authenticationStateProvider).LogUserOut();
+            var client = _clientFactory.CreateClient("SmartChat.Server");
+            var response = await client.PostAsync("account/signout", new StringContent("", Encoding.UTF8, "application/json"));
+
+            if (response.IsSuccessStatusCode)
+            {
+                await _localStorage.RemoveItemAsync("authToken");
+                ((SmartAuthenticationStateProvider)_authenticationStateProvider).LogUserOut();
+            }
         }
     }
 }

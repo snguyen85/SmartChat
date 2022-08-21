@@ -43,6 +43,14 @@ namespace SmartChat.Server.Controllers
             return Ok(new RegisterResult { Successful = true });
         }
 
+        [HttpPost("Signout")]
+        public async Task<IActionResult> Signout()
+        {
+            await _signInManager.SignOutAsync();
+
+            return Ok();
+        }
+
         [HttpPost("Login")]
         public async Task<IActionResult> Login([FromBody] LoginModel login)
         {
