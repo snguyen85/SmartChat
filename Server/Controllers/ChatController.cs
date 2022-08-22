@@ -78,6 +78,31 @@ namespace SmartChat.Server.Controllers
             }
         }
 
+        /// <summary>
+        /// Get all direct message conversations of this user
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet("/messages")]
+        public async Task<IActionResult> GetAllMessages()
+        {
+            using (var conn = new SqlConnection(_dbConnection))
+            {
+                await conn.OpenAsync();
+
+                var userId = _userManager.GetUserId(User);
+
+                var results = await conn.QueryAsync("SELECT Messages.Id, UserName, Content" +
+                                                    "FROM Messages" +
+                                                    "INNER JOIN DirectMessages ON DirectMessages.FromUserId = Messages.AuthorId" +
+                                                    "INNER JOIN DirectMessage ON DirectMessages.ToUserId = Messages.AuthorId" +
+                                                    "INNER JOIN AspNetUsers ON AspNetUsers.Id = DirectMessages.FromUserId" +
+                                                    "WHERE Messages.AuthorId = @AuthorId", new
+                                                    {
+                                                        AuthorId = userId
+                                                    });
+                return Ok(results);
+            }
+        }
 
         /// <summary>
         /// Get conversation history between this user and another user

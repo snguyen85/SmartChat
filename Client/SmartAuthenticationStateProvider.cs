@@ -29,7 +29,7 @@ namespace SmartChat.Client
             var token = new JwtSecurityTokenHandler().ReadJwtToken(savedToken);
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("bearer", savedToken);
 
-            return new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity(token.Claims)));
+            return new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity(token.Claims, "Token")));
         }
 
         public void AuthenticateUser(string email)

@@ -1,0 +1,38 @@
+﻿@using System.ComponentModel.DataAnnotations
+
+@inject SmartChatService SmartChatService
+@inject ISnackbar Snackbar
+
+<MudDialog Options="dialogOptions">
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            Add Chat Room
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudTextField Label="Room name" @bind-Value="@RoomName" For="@(() => RoomName)" />
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Error" OnClick="() => AddChatRoomAsync()">Add Room</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code
+{
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+
+    [Required]
+    public string RoomName { get; set; }
+    DialogOptions dialogOptions = new() { MaxWidth = MaxWidth.Medium };
+
+    void Submit() => MudDialog.Close(DialogResult.Ok(true));
+    void Cancel() => MudDialog.Cancel();
+
+    async void AddChatRoomAsync()
+    {
+        await SmartChatService.AddChatRoomAsync(RoomName);
+    }
+}
+
+

@@ -11,9 +11,6 @@
         <LoginDisplay />
     </MudAppBar>
     <MudMainContent>
-        <MudToolBar DisableGutters="true">
-            <MudIconButton Icon="@Icons.Material.Outlined.Menu" Color="Color.Inherit" OnClick="@((e) => DrawerToggle())" Class="ml-3" />
-        </MudToolBar>
         <MudContainer MaxWidth="MaxWidth.False" Class="mt-4">
             @Body
         </MudContainer>
@@ -21,9 +18,4 @@
 </MudLayout>
 
 @code {
-    bool _drawerOpen = false;
-    void DrawerToggle()
-    {
-        _drawerOpen = !_drawerOpen;
-    }
 }

@@ -8,7 +8,7 @@ using SmartChat.Shared.Models;
 
 namespace SmartChat.Server.Controllers
 {
-    [Authorize]
+    //[Authorize]
     [ApiController]
     [Route("[controller]")]
     public class RoomController : ControllerBase
@@ -31,12 +31,29 @@ namespace SmartChat.Server.Controllers
         }
 
         /// <summary>
+        /// Get all rooms
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet("all")]
+        public async Task<IActionResult> GetAllRooms()
+        {
+            using (var conn = new SqlConnection(_dbConnection))
+            {
+                await conn.OpenAsync();
+
+                var results = await conn.QueryAsync<Room>(@"SELECT Id, Name
+                                                            FROM Rooms");
+                return Ok(results);
+            }
+        }
+
+        /// <summary>
         /// Returns a list of messages in a room
         /// </summary>
         /// <param name="roomId"></param>
         /// <returns></returns>
         [HttpGet("{roomId}/messages")]
-        public async Task<IActionResult> Messages(int roomId)
+        public async Task<IActionResult> GetRoomMessages(int roomId)
         {
             using (var conn = new SqlConnection(_dbConnection))
             {
@@ -123,18 +140,16 @@ namespace SmartChat.Server.Controllers
                 }
 
                 // room name is unique so create room
-                var insertedRow = await conn.ExecuteAsync("INSERT INTO Room (Name)" +
-                                                          "VALUES (@Name)", new
-                                                          {
-                                                              Name = name
-                                                          });
+                var roomId = await conn.ExecuteScalarAsync<int?>(@"INSERT INTO Rooms (Name)
+                                                                   VALUES (@Name)
+                                                                   SELECT SCOPE_IDENTITY()", new { Name = name });
 
-                if (insertedRow == 0)
+                if (!roomId.HasValue)
                 {
-                    throw new Exception($"Unexpected response creating room: {name}");
+                    throw new Exception($"Failed inserting new room: {name}");
                 }
 
-                return Ok();
+                return Ok(roomId);
             }
         }
 
