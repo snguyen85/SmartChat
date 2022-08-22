@@ -11,6 +11,8 @@ namespace SmartChat.Data.Migrations
     {
         public DbSet<Room> Rooms { get; set; }
         public DbSet<Message> Messages { get; set; }
+        public DbSet<Conversation> Conversations { get; set; }
+        public DbSet<UserConversation> UserConversations { get; set; } 
         public DbSet<DirectMessage> DirectMessages { get; set; }
         public DbSet<RoomMessage> RoomMessages { get; set; }    
         public DbSet<RoomMembership> RoomMembers { get; set; }

@@ -238,19 +238,51 @@ namespace SmartChat.Data.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"), 1L, 1);
 
-                    b.Property<string>("FromUserId")
-                        .HasColumnType("nvarchar(450)");
-
                     b.Property<long>("MessageId")
                         .HasColumnType("bigint");
 
-                    b.Property<string>("ToUserId")
-                        .HasColumnType("nvarchar(450)");
+                    b.Property<long>("ConversationId")
+                        .HasColumnType("bigint");
 
                     b.HasKey("Id");
 
                     b.ToTable("DirectMessages");
                 });
+
+            modelBuilder.Entity("SmartChat.Shared.Models.Conversation", b =>
+            {
+                b.Property<long>("Id")
+                    .ValueGeneratedOnAdd()
+                    .HasColumnType("bigint");
+
+                SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"), 1L, 1);
+
+                b.Property<DateTime>("Created")
+                    .HasColumnType("datetime2");
+
+                b.HasKey("Id");
+
+                b.ToTable("Conversation");
+            });
+
+            modelBuilder.Entity("SmartChat.Shared.Models.UserConversation", b =>
+            {
+                b.Property<long>("Id")
+                    .ValueGeneratedOnAdd()
+                    .HasColumnType("bigint");
+
+                b.Property<string>("UserId")
+                    .HasColumnType("nvarchar(450)");
+
+                b.Property<long>("ConversationId")
+                    .HasColumnType("bigint");
+
+                SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"), 1L, 1);
+
+                b.HasKey("Id");
+
+                b.ToTable("Conversation");
+            });
 
             modelBuilder.Entity("SmartChat.Shared.Models.Message", b =>
                 {
