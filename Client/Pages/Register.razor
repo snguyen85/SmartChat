@@ -41,7 +41,7 @@
 
     private RegisterModel RegisterModel = new RegisterModel();
     private bool ShowErrors;
-    private IEnumerable<string> Errors;
+    private IEnumerable<string> Errors = Array.Empty<string>();
 
     private async Task HandleRegistration()
     {
@@ -55,7 +55,7 @@
         }
         else
         {
-            Errors = result.Errors;
+            Errors = result.Errors == null ? Array.Empty<string>() : result.Errors;
             ShowErrors = true;
         }
     }
