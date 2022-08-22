@@ -79,7 +79,7 @@ namespace SmartChat.Server.Controllers
         /// </summary>
         /// <param name="roomId"></param>
         /// <returns></returns>
-        [HttpGet("{roomId}/subscribe")]
+        [HttpPost("{roomId}/subscribe")]
         public async Task<IActionResult> Subscribe(int roomId)
         {
             using (var conn = new SqlConnection(_dbConnection))
@@ -87,7 +87,7 @@ namespace SmartChat.Server.Controllers
                 await conn.OpenAsync();
 
                 // check if membership to room already exists
-                var room = await conn.QuerySingleOrDefaultAsync<Room>("SELECT Id, Name FROM Rooms WHERE Id = @RoomId;", new
+                var room = await conn.QuerySingleOrDefaultAsync<Room>(@"SELECT Id, Name FROM Rooms WHERE Id = @RoomId;", new
                 {
                     RoomId = roomId
                 });
@@ -100,12 +100,12 @@ namespace SmartChat.Server.Controllers
                 var userId = _userManager.GetUserId(User);
 
                 // if not add to room membership
-                var insertedRow = await conn.ExecuteAsync("INSERT INTO RoomMembers (UserId, RoomId)" +
-                                                          "VALUES (@UserId, @RoomId)", new
-                                                          {
-                                                              RoomId = roomId,
-                                                              UserId = userId
-                                                          });
+                var insertedRow = await conn.ExecuteAsync(@"INSERT INTO RoomMembers (UserId, RoomId)
+                                                            VALUES (@UserId, @RoomId)", new
+                                                            {
+                                                                RoomId = roomId,
+                                                                UserId = userId
+                                                            });
 
                 if (insertedRow == 0)
                 {
@@ -183,15 +183,15 @@ namespace SmartChat.Server.Controllers
 
                 var userId = _userManager.GetUserId(User);
 
-                var insertedRows = await conn.ExecuteAsync("INSERT INTO Messages (Content, Created, AuthorId)" +
-                                                          "VALUES (@Content, GETUTCDATE() @UserId)" +
-                                                          "INSERT INTO RoomMessages (RoomId, MessageId)" +
-                                                          "VALUES (@RoomId, SCOPE_IDENTITY()", new
-                                                          {
-                                                              UserId = userId,
-                                                              Content = messageContent,
-                                                              RoomId = room.Id
-                                                          });
+                var insertedRows = await conn.ExecuteAsync(@"INSERT INTO Messages (Content, Created, AuthorId)
+                                                             VALUES (@Content, GETUTCDATE() @UserId)
+                                                             INSERT INTO RoomMessages (RoomId, MessageId)
+                                                             VALUES (@RoomId, SCOPE_IDENTITY()", new
+                                                             {
+                                                                UserId = userId,
+                                                                Content = messageContent,
+                                                                RoomId = room.Id
+                                                             });
 
                 if (insertedRows == 0)
                 {

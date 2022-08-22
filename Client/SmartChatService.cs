@@ -25,6 +25,18 @@ namespace SmartChat.Client
             return results;
         }
 
+        public async Task SubscribeToRoom(int roomId)
+        {
+            var client = _clientFactory.CreateClient("SmartChat.Server");
+
+            var response = await client.PostAsync($"/room/{roomId}/subscribe", new StringContent(""));
+
+            if (response.IsSuccessStatusCode)
+            {
+
+            }
+        }
+
         public async Task<Room> AddChatRoomAsync(string name)
         {
             var client = _clientFactory.CreateClient("SmartChat.Server");
