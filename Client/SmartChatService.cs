@@ -56,11 +56,15 @@ namespace SmartChat.Client
             throw new Exception($"{content}");
         }
 
-        public async Task<List<ChatMessage>> GetAllConversationsAsync()
+        /// <summary>
+        /// Get all people we are talking to
+        /// </summary>
+        /// <returns></returns>
+        public async Task<List<SmartContact>> GetAllContactsAsync()
         {
             var client = _clientFactory.CreateClient("SmartChat.Server");
 
-            return await client.GetFromJsonAsync<List<ChatMessage>>($"/chat/messages");
+            return await client.GetFromJsonAsync<List<SmartContact>>($"/chat/contacts");
         }
 
         public async Task<List<ChatMessage>> GetConversationAsync(string contactId)

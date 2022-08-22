@@ -10,6 +10,7 @@ namespace SmartChat.Shared.ViewModels
     public class ChatMessage
     {
         public long Id { get; set; }
+        public long ConversationId { get; set; }
         public string FromUserId { get; set; }
         public string ToUserId { get; set; }
         public string Content { get; set; }

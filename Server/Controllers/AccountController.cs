@@ -58,9 +58,12 @@ namespace SmartChat.Server.Controllers
 
             if (!result.Succeeded) return BadRequest(new LoginResult { Successful = false, Error = "Username and password are invalid." });
 
+            var user = await _userManager.FindByNameAsync(login.Username);
+
             var claims = new[]
             {
-                new Claim(ClaimTypes.Name, login.Username)
+                new Claim(ClaimTypes.Name, user.UserName),
+                new Claim(ClaimTypes.NameIdentifier, user.Id)
             };
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JwtSecurityKey"]));

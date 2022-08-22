@@ -13,10 +13,7 @@ namespace SmartChat.Shared.Models
     public class DirectMessage
     {
         public int Id { get; set; }
-        // intended recipient
-        public string ToUserId { get; set; }
-        // author
-        public string FromUserId { get; set; }
         public long MessageId { get; set; }
+        public long ConversationId { get; set; }
     }
 }

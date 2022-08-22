@@ -21,7 +21,7 @@
         </MudToolBar>
         <div class="d-flex flex-column px-4" style="max-height:65vh;min-height:65vh; overflow:scroll;" id="chatContainer">
             <MudGrid Justify="Justify.FlexStart">
-                @foreach (var room in ChatRooms)
+                @foreach (var room in chatRooms)
                 {
                     <MudItem xs="3">
                         <MudPaper Class="d-flex flex-column justify-center mud-width-full pa-4">
@@ -45,25 +45,25 @@
         </MudToolBar>
         <div class="d-flex flex-column px-4" style="max-height:70vh;min-height:70vh; overflow:scroll;">
             <MudList Clickable="true">
-                @foreach (var user in ChatUsers)
+                @foreach (var contact in contacts)
                 {
-                    <MudListItem Class="pa-0 px-2" OnClick="@(() => LoadUserChat(user.Id))">
+                    <MudListItem Class="pa-0 px-2">
                         <div class="d-flex flex-row mt-n1 mb-n1">
-                            <div class="mr-4">
-                                <MudBadge Class="my-2">
-                                    @if (user.Id == ContactId)
+                            <div class="mr-4 my-2">
+                                
+                                    @if (contact.Id == contactId)
                                     {
-                                        <MudAvatar Color="Color.Secondary" Style="height:50px; width:50px;">@user.Email.ToUpper().FirstOrDefault()</MudAvatar>
+                                        <MudAvatar Color="Color.Secondary" Style="height:50px; width:50px;">@contact.Username.ToUpper().FirstOrDefault()</MudAvatar>
                                     }
                                     else
                                     {
-                                        <MudAvatar Color="Color.Dark" Style="height:50px; width:50px;">@user.Email.ToUpper().FirstOrDefault()</MudAvatar>
+                                        <MudAvatar Color="Color.Dark" Style="height:50px; width:50px;">@contact.Username.ToUpper().FirstOrDefault()</MudAvatar>
                                     }
-                                </MudBadge>
+                                
                             </div>
                             <div>
-                                <MudText Typo="Typo.body2" Class="mt-3 mb-n2">@user.Email</MudText>
-                                <MudText Typo="Typo.caption" Style="font-size: xx-small!important;">@user.Id</MudText>
+                                <MudText Typo="Typo.body2" Class="mt-3 mb-n2">@contact.Username</MudText>
+                                <MudText Typo="Typo.caption" Style="font-size: xx-small!important;">@contact.Id</MudText>
                             </div>
                         </div>
                     </MudListItem>
@@ -75,39 +75,30 @@
 
 @code
 {
-    [CascadingParameter] public HubConnection hubConnection { get; set; }
+    [Parameter] public string contactId { get; set; }
 
-    [Parameter] public string CurrentMessage { get; set; }
-    [Parameter] public string CurrentUserId { get; set; }
-    [Parameter] public string CurrentUserEmail { get; set; }
-
-    [Parameter] public string ContactEmail { get; set; }
-    [Parameter] public string ContactId { get; set; }
-
+    private List<SmartContact> contacts = new List<SmartContact>();
     private List<ChatMessage> messages = new List<ChatMessage>();
-    public List<Room> ChatRooms = new List<Room>();
-    public List<ApplicationUser> ChatUsers = new List<ApplicationUser>();
+    public List<Room> chatRooms = new List<Room>();
 
     protected override async Task OnInitializedAsync()
     {
         var state = await AuthenticationStateProvider.GetAuthenticationStateAsync();
         var user = state.User;
 
-        CurrentUserId = user.Claims.Where(a => a.Type == "sub").Select(a => a.Value).FirstOrDefault();
-        CurrentUserEmail = user.Claims.Where(a => a.Type == "name").Select(a => a.Value).FirstOrDefault();
-
-        //await GetAllConversationsAsync();
+        await GetAllContactsAsync();
         await GetAllChatRoomsAsync();
     }
 
-    private async Task GetAllConversationsAsync()
+    private async Task GetAllContactsAsync()
     {
-        //ChatUsers = await SmartChatService.GetAllConversationsAsync();
+        contacts = await SmartChatService.GetAllContactsAsync();
+        StateHasChanged();
     }
 
     private async Task GetAllChatRoomsAsync()
     {
-        ChatRooms = await SmartChatService.GetAllChatRoomsAsync();
+        chatRooms = await SmartChatService.GetAllChatRoomsAsync();
         StateHasChanged();
     }
 
@@ -122,10 +113,10 @@
         var dialog = DialogService.Show<NewRoomDialog>();
 
         var result = await dialog.Result;
-    }
 
-    private async Task LoadUserChat(string UserId)
-    {
-        
+        if (!result.Cancelled)
+        {
+            
+        }
     }
 }

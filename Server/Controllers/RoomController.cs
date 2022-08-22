@@ -61,15 +61,15 @@ namespace SmartChat.Server.Controllers
 
                 var userId = _userManager.GetUserId(User);
 
-                var results = await conn.QueryAsync("SELECT Messages.Id, UserName, Content" +
-                                                    "FROM Messages" +
-                                                    "INNER JOIN RoomMessages ON Messages.Id = RoomMessages.MessageId" +
-                                                    "INNER JOIN AspNetUsers ON AspNetUsers.Id = @UserId" +
-                                                    "WHERE RoomMessages.RoomId = @RoomId", new
-                                                    {
+                var results = await conn.QueryAsync(@"SELECT Messages.Id, UserName, Content
+                                                      FROM Messages
+                                                      INNER JOIN RoomMessages ON Messages.Id = RoomMessages.MessageId
+                                                      INNER JOIN AspNetUsers ON AspNetUsers.Id = Messages.AuthorId
+                                                      WHERE RoomMessages.RoomId = @RoomId", new
+                                                      {
                                                         UserId = userId,
                                                         RoomId = roomId
-                                                    });
+                                                      });
                 return Ok(results);
             }
         }
