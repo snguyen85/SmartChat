@@ -34,8 +34,15 @@
 
     protected override async Task OnInitializedAsync()
     {
-        hubConnection = new HubConnectionBuilder().WithUrl(NavigationManager.ToAbsoluteUri("/signalRHub")).Build();
+        hubConnection = new HubConnectionBuilder()
+            .WithUrl(NavigationManager.ToAbsoluteUri("/signalRHub"), options => 
+                {
+                    options.AccessTokenProvider = ((SmartAuthenticationStateProvider)AuthenticationStateProvider).GetToken;
+                })
+            .Build();
+
         await hubConnection.StartAsync();
+
         hubConnection.On<ChatMessage>("ChatNotification", (message) =>
         {
             SnackBar.Add($"New Message From {message.AuthorName}", Severity.Info, config =>

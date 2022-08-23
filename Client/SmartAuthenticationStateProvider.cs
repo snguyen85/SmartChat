@@ -32,6 +32,13 @@ namespace SmartChat.Client
             return new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity(token.Claims, "Token")));
         }
 
+        public async Task<string?> GetToken()
+        {
+            var savedToken = await _localStorage.GetItemAsync<string>("authToken");
+
+            return savedToken;
+        }
+
         public void AuthenticateUser(string email)
         {
             var authenticatedUser = new ClaimsPrincipal(new ClaimsIdentity(new[] { new Claim(ClaimTypes.Name, email) }, "apiauth"));

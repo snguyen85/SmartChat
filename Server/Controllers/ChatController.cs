@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.Data.SqlClient;
 using SmartChat.Shared.Models;
 using SmartChat.Shared.ViewModels;
@@ -18,7 +19,10 @@ namespace SmartChat.Server.Controllers
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly string _dbConnection;
 
-        public ChatController(ILogger<ChatController> logger, IConfiguration configuration, UserManager<ApplicationUser> userManager)
+        public ChatController(ILogger<ChatController> logger, 
+            IConfiguration configuration, 
+            UserManager<ApplicationUser> userManager,
+            IHubContext<SignalRHub> hubContext)
         {
             _logger = logger;
 
@@ -66,18 +70,18 @@ namespace SmartChat.Server.Controllers
                     return BadRequest("Not part of the conversation");
                 }
 
-                var messageId = await conn.ExecuteScalarAsync<Int64>(@"INSERT INTO Messages (Content, Created, AuthorId)
-                                                                     VALUES (@Content, GETUTCDATE(), @AuthorId)
-                                                                     DECLARE @MessageId BIGINT
-                                                                     SET @MessageId = SCOPE_IDENTITY()
-                                                                     INSERT INTO DirectMessages (ConversationId, MessageId)
-                                                                     VALUES (@ConversationId, @MessageId)
-                                                                     SELECT Messages.Id FROM Messages WHERE Messages.Id = @MessageId", new
-                                                                     {
-                                                                        AuthorId = authorId,
-                                                                        Content = messageContent,
-                                                                        ConversationId = conversationId
-                                                                     });
+                var insertQuery = @"INSERT INTO Messages (Content, Created, AuthorId)
+                                    VALUES (@Content, GETUTCDATE(), @AuthorId)
+                                    DECLARE @MessageId BIGINT
+                                    SET @MessageId = SCOPE_IDENTITY()
+                                    INSERT INTO DirectMessages (ConversationId, MessageId)
+                                    VALUES (@ConversationId, @MessageId)
+                                    SELECT Messages.Id FROM Messages WHERE Messages.Id = @MessageId";
+
+                var messageId = await conn.ExecuteScalarAsync<Int64>(insertQuery, new { AuthorId = authorId,
+                    Content = messageContent,
+                    ConversationId = conversationId
+                });
 
                 if (messageId == 0)
                 {
@@ -181,7 +185,7 @@ namespace SmartChat.Server.Controllers
                                            INNER JOIN DirectMessages ON DirectMessages.MessageId = Messages.Id
                                            INNER JOIN AspNetUsers ON AspNetUsers.Id = Messages.AuthorId
                                            WHERE DirectMessages.ConversationId = @ConversationId";
-                
+
                 var conversations = await conn.QueryAsync<ChatMessage>(conversationsQuery, new { ConversationId = userConversation.ConversationId });
 
                 return Ok(conversations);

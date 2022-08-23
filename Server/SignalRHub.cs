@@ -1,8 +1,10 @@
-﻿using Microsoft.AspNetCore.SignalR;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.SignalR;
 using SmartChat.Shared.ViewModels;
 
 namespace SmartChat.Server
 {
+    [Authorize]
     public class SignalRHub : Hub
     {
         /// <summary>
