@@ -1,5 +1,12 @@
 ﻿@inherits LayoutComponentBase
 
+@using Microsoft.AspNetCore.SignalR.Client
+@using System.Security.Claims
+@using SmartChat.Shared.ViewModels
+
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager NavigationManager
+
 <MudThemeProvider />
 <MudDialogProvider />
 <MudSnackbarProvider />
@@ -12,10 +19,42 @@
     </MudAppBar>
     <MudMainContent>
         <MudContainer MaxWidth="MaxWidth.False" Class="mt-4">
-            @Body
+            <CascadingValue Value="hubConnection">
+                @Body
+            </CascadingValue>
         </MudContainer>
     </MudMainContent>
 </MudLayout>
 
 @code {
+
+    private HubConnection hubConnection;
+    public bool IsConnected => hubConnection.State == HubConnectionState.Connected;
+    private string currentUserId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        hubConnection = new HubConnectionBuilder().WithUrl(NavigationManager.ToAbsoluteUri("/signalRHub")).Build();
+        await hubConnection.StartAsync();
+        hubConnection.On<ChatMessage>("ChatNotification", (message) =>
+        {
+            SnackBar.Add($"New Message From {message.AuthorName}", Severity.Info, config =>
+            {
+                config.VisibleStateDuration = 10000;
+                config.HideTransitionDuration = 500;
+                config.ShowTransitionDuration = 500;
+                config.Action = "Chat?";
+                config.ActionColor = Color.Info;
+                config.Onclick = snackbar =>
+                {
+                    NavigationManager.NavigateTo($"chat/{message.ConversationId}");
+                    return Task.CompletedTask;
+                };
+            });
+        });
+
+        var state = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = state.User;
+        currentUserId = user.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
+    }
 }

@@ -12,7 +12,7 @@
 @inject IDialogService DialogService
 
 <div class="d-flex flex-grow-1 flex-row">
-    <Chat ConversationId="selectedConversationId" Messages="messages" ContactName="@selectedContactName" />
+    <Chat ConversationId="selectedConversationId" Messages="messages" ContactName="@selectedContactName" ContactId="@selectedContactId" />
     <MudPaper Elevation="25" Class="pa-3 ml-6" MinWidth="400px">
         <MudToolBar Dense="true">
             <MudText Typo="Typo.h6" Inline="true" Class="mr-2">#</MudText>

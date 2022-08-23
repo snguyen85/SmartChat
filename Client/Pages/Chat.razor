@@ -52,6 +52,7 @@
 
     [Parameter] public string CurrentMessage { get; set; }
     [Parameter] public string ContactName { get; set; }
+    [Parameter] public string ContactId { get; set; }
     [Parameter] public long ConversationId { get; set; }
     [Parameter] public List<ChatMessage> Messages { get; set; } = new List<ChatMessage>();
 
@@ -64,6 +65,26 @@
     }
     protected override async Task OnInitializedAsync()
     {
+        if (hubConnection == null)
+        {
+            hubConnection = new HubConnectionBuilder().WithUrl(NavigationManager.ToAbsoluteUri("/signalRHub")).Build();
+        }
+
+        if (hubConnection.State == HubConnectionState.Disconnected)
+        {
+            await hubConnection.StartAsync();
+        }
+
+        hubConnection.On<ChatMessage>("ChatNotification", async (message) =>
+        {
+            if (message.ConversationId == ConversationId)
+            {
+                Messages.Add(message);
+
+                StateHasChanged();
+            }
+        });
+
         var state = await AuthenticationStateProvider.GetAuthenticationStateAsync();
         var user = state.User;
 
@@ -76,14 +97,18 @@
         if (!string.IsNullOrEmpty(CurrentMessage) && ConversationId > 0)
         {
             var messageId = await SmartChatService.SaveMessageAsync(ConversationId, CurrentMessage);
+            var messageSent = new ChatMessage { 
+                    Id = messageId,
+                    AuthorName = currentUserName,
+                    ConversationId = ConversationId,
+                    Content = CurrentMessage,
+                    Created = DateTime.UtcNow };
 
             if (messageId > 0)
             {
-                Messages.Add(new ChatMessage { Id = messageId,
-                    AuthorName = currentUserName,
-                    ConversationId = ConversationId,
-                    Content = CurrentMessage, 
-                    Created = DateTime.UtcNow });
+                await hubConnection.SendAsync("BroadcastMessageAsync", messageSent, ContactId);
+
+                Messages.Add(messageSent);
             }
 
             CurrentMessage = string.Empty;
