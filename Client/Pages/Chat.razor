@@ -1,21 +1,20 @@
 ﻿@page "/chat"
-@page "/chat/{ContactId}"
+@page "/chat/{ConversationId}"
 @attribute [Authorize] 
 
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.SignalR.Client
 @using SmartChat.Shared.ViewModels
+@using System.Security.Claims
 
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JSRuntime
 @inject SmartChatService SmartChatService
 @inject AuthenticationStateProvider AuthenticationStateProvider
 
-            @if (string.IsNullOrEmpty(ContactId))
-            {
 <MudPaper Elevation="25" Class="py-4 flex-grow-1">
     <MudToolBar Dense="true">
-        @if (string.IsNullOrEmpty(ContactId))
+        @if (string.IsNullOrEmpty(ContactName))
         {
             <MudIcon Icon="@Icons.Material.Outlined.Person" Style="margin-right:10px"></MudIcon>
             <MudText Typo="Typo.h6">chat</MudText>
@@ -23,7 +22,7 @@
         else
         {
             <MudIcon Icon="@Icons.Material.Outlined.ChatBubble" Style="margin-right:10px"></MudIcon>
-            <MudText Typo="Typo.h6">@ContactEmail</MudText>
+            <MudText Typo="Typo.h6">@ContactName</MudText>
         }
     </MudToolBar>
     <div class="d-flex flex-column px-4" style="max-height:65vh;min-height:65vh; overflow:scroll;" id="chatContainer">
@@ -51,30 +50,45 @@
 @code {
     [CascadingParameter] public HubConnection hubConnection { get; set; }
 
-    [Parameter] public string CurrentUserId { get; set; }
     [Parameter] public string CurrentMessage { get; set; }
-    [Parameter] public string ContactEmail { get; set; }
-    [Parameter] public string ContactId { get; set; }
-
+    [Parameter] public string ContactName { get; set; }
+    [Parameter] public long ConversationId { get; set; }
     [Parameter] public List<ChatMessage> Messages { get; set; } = new List<ChatMessage>();
+
+    private string currentUserId = "";
+    private string currentUserName = "";
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await JSRuntime.InvokeAsync<string>("ScrollToBottom", "chatContainer");
+    }
+    protected override async Task OnInitializedAsync()
+    {
+        var state = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = state.User;
+
+        currentUserId = user.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
+        currentUserName = user.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value;
+    }
 
     private async Task SubmitAsync()
     {
-        if (!string.IsNullOrEmpty(CurrentMessage) && !string.IsNullOrEmpty(ContactId))
+        if (!string.IsNullOrEmpty(CurrentMessage) && ConversationId > 0)
         {
-            //Save Message to DB
-            var chatHistory = new Message()
+            var messageId = await SmartChatService.SaveMessageAsync(ConversationId, CurrentMessage);
+
+            if (messageId > 0)
             {
-                Content = CurrentMessage,
-                AuthorId = CurrentUserId,
-                Created = DateTime.UtcNow
+                Messages.Add(new ChatMessage { Id = messageId,
+                    AuthorName = currentUserName,
+                    ConversationId = ConversationId,
+                    Content = CurrentMessage, 
+                    Created = DateTime.UtcNow });
+            }
 
-            };
-
-            await SmartChatService.SaveMessageAsync(chatHistory);
-            chatHistory.AuthorId = CurrentUserId;
-            //await hubConnection.SendAsync("SendMessageAsync", chatHistory, CurrentUserEmail);
             CurrentMessage = string.Empty;
+
+            StateHasChanged();
         }
     }
 }

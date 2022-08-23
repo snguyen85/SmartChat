@@ -66,22 +66,25 @@ namespace SmartChat.Server.Controllers
                     return BadRequest("Not part of the conversation");
                 }
 
-                var insertedRows = await conn.ExecuteAsync(@"INSERT INTO Messages (Content, Created, AuthorId)
-                                                             VALUES (@Content, GETUTCDATE(), @AuthorId)
-                                                             INSERT INTO DirectMessages (ConversationId, MessageId)
-                                                             VALUES (@ConversationId, SCOPE_IDENTITY())", new
-                                                          {
-                                                              AuthorId = authorId,
-                                                              Content = messageContent,
-                                                              ConversationId = conversationId
-                                                          });
+                var messageId = await conn.ExecuteScalarAsync<Int64>(@"INSERT INTO Messages (Content, Created, AuthorId)
+                                                                     VALUES (@Content, GETUTCDATE(), @AuthorId)
+                                                                     DECLARE @MessageId BIGINT
+                                                                     SET @MessageId = SCOPE_IDENTITY()
+                                                                     INSERT INTO DirectMessages (ConversationId, MessageId)
+                                                                     VALUES (@ConversationId, @MessageId)
+                                                                     SELECT Messages.Id FROM Messages WHERE Messages.Id = @MessageId", new
+                                                                     {
+                                                                        AuthorId = authorId,
+                                                                        Content = messageContent,
+                                                                        ConversationId = conversationId
+                                                                     });
 
-                if (insertedRows == 0)
+                if (messageId == 0)
                 {
                     throw new Exception($"Unexpected response sending message to user");
                 }
 
-                return Ok();
+                return Ok(messageId);
             }
         }
 
@@ -166,9 +169,9 @@ namespace SmartChat.Server.Controllers
                               FROM UserConversations
                               WHERE ConversationId = @ConversationId AND UserId = @UserId";
 
-                var conversation = await conn.QuerySingleOrDefaultAsync<UserConversation>(query, new { ConversationId = conversationId, UserId = userId });
+                var userConversation = await conn.QuerySingleOrDefaultAsync<UserConversation>(query, new { ConversationId = conversationId, UserId = userId });
 
-                if (conversation == null)
+                if (userConversation == null)
                 {
                     return BadRequest("No conversation has been started");
                 }
@@ -179,7 +182,7 @@ namespace SmartChat.Server.Controllers
                                            INNER JOIN AspNetUsers ON AspNetUsers.Id = Messages.AuthorId
                                            WHERE DirectMessages.ConversationId = @ConversationId";
                 
-                var conversations = await conn.QueryAsync<ChatMessage>(conversationsQuery, new { ConversationId = conversation.Id });
+                var conversations = await conn.QueryAsync<ChatMessage>(conversationsQuery, new { ConversationId = userConversation.ConversationId });
 
                 return Ok(conversations);
             }

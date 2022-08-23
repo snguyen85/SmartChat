@@ -90,12 +90,26 @@ namespace SmartChat.Client
             return data;
         }
 
-        public async Task SaveMessageAsync(long conversationId, string messageContent)
+        /// <summary>
+        /// Save the message in the conversation and return the id of the newly created
+        /// message
+        /// </summary>
+        /// <param name="conversationId"></param>
+        /// <param name="messageContent"></param>
+        /// <returns></returns>
+        public async Task<long> SaveMessageAsync(long conversationId, string messageContent)
         {
             var client = _clientFactory.CreateClient("SmartChat.Server");
 
             var response = await client.PostAsJsonAsync<string>($"/chat/{conversationId}/messages", messageContent);
             var content = await response.Content.ReadAsStringAsync();
+
+            if (response.IsSuccessStatusCode)
+            {
+                return Int64.Parse(content);
+            }
+
+            return 0;
         }
     }
 }
