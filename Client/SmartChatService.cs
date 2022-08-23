@@ -67,11 +67,11 @@ namespace SmartChat.Client
             return await client.GetFromJsonAsync<List<SmartContact>>($"/chat/contacts");
         }
 
-        public async Task<List<ChatMessage>> GetConversationAsync(string contactId)
+        public async Task<List<ChatMessage>> GetConversationAsync(long conversationId)
         {
             var client = _clientFactory.CreateClient("SmartChat.Server");
 
-            return await client.GetFromJsonAsync<List<ChatMessage>>($"/chat/{contactId}/messages");
+            return await client.GetFromJsonAsync<List<ChatMessage>>($"/chat/{conversationId}/messages");
         }
 
         public async Task<ApplicationUser> GetUserDetailsAsync(string userId)

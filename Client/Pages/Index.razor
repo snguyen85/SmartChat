@@ -12,30 +12,7 @@
 @inject IDialogService DialogService
 
 <div class="d-flex flex-grow-1 flex-row">
-    <MudPaper Elevation="25" Class="py-4 flex-grow-1">
-        <MudToolBar Dense="true">
-            <MudText Typo="Typo.h6" Inline="true" Class="mr-2">#</MudText>
-            <MudText Typo="Typo.h6">rooms</MudText>
-            <MudSpacer />
-            <MudIconButton Icon="@Icons.Material.Outlined.Add" OnClick="OpenNewRoomDialog" />
-        </MudToolBar>
-        <div class="d-flex flex-column px-4" style="max-height:65vh;min-height:65vh; overflow:scroll;" id="chatContainer">
-            <MudGrid Justify="Justify.FlexStart">
-                @foreach (var room in chatRooms)
-                {
-                    <MudItem xs="3">
-                        <MudPaper Class="d-flex flex-column justify-center mud-width-full pa-4">
-                            <MudToolBar Dense="true">
-                                <MudText Typo="Typo.h6">@room.Name</MudText>
-                                <MudSpacer />
-                                <MudIconButton Icon="@Icons.Material.Outlined.CheckCircle" Size="Size.Medium" OnClick="() => SubscribeToRoom(room.Id)"/>
-                            </MudToolBar>
-                        </MudPaper>
-                    </MudItem>
-                }
-            </MudGrid>
-        </div>
-    </MudPaper>
+    <Chat Messages="messages" />
     <MudPaper Elevation="25" Class="pa-3 ml-6" MinWidth="400px">
         <MudToolBar Dense="true">
             <MudText Typo="Typo.h6" Inline="true" Class="mr-2">#</MudText>
@@ -47,19 +24,17 @@
             <MudList Clickable="true">
                 @foreach (var contact in contacts)
                 {
-                    <MudListItem Class="pa-0 px-2">
+                    <MudListItem Class="pa-0 px-2" OnClick="@(() => GetConversationAsync(contact.Id, contact.ConversationId))">
                         <div class="d-flex flex-row mt-n1 mb-n1">
                             <div class="mr-4 my-2">
-                                
-                                    @if (contact.Id == contactId)
-                                    {
-                                        <MudAvatar Color="Color.Secondary" Style="height:50px; width:50px;">@contact.Username.ToUpper().FirstOrDefault()</MudAvatar>
-                                    }
-                                    else
-                                    {
-                                        <MudAvatar Color="Color.Dark" Style="height:50px; width:50px;">@contact.Username.ToUpper().FirstOrDefault()</MudAvatar>
-                                    }
-                                
+                                @if (contact.Id == selectedContactId)
+                                {
+                                    <MudAvatar Color="Color.Secondary" Style="height:50px; width:50px;">@contact.Username.ToUpper().FirstOrDefault()</MudAvatar>
+                                }
+                                else
+                                {
+                                    <MudAvatar Color="Color.Dark" Style="height:50px; width:50px;">@contact.Username.ToUpper().FirstOrDefault()</MudAvatar>
+                                }
                             </div>
                             <div>
                                 <MudText Typo="Typo.body2" Class="mt-3 mb-n2">@contact.Username</MudText>
@@ -75,11 +50,10 @@
 
 @code
 {
-    [Parameter] public string contactId { get; set; }
+    [Parameter] public string selectedContactId { get; set; }
 
     private List<SmartContact> contacts = new List<SmartContact>();
     private List<ChatMessage> messages = new List<ChatMessage>();
-    public List<Room> chatRooms = new List<Room>();
 
     protected override async Task OnInitializedAsync()
     {
@@ -87,7 +61,6 @@
         var user = state.User;
 
         await GetAllContactsAsync();
-        await GetAllChatRoomsAsync();
     }
 
     private async Task GetAllContactsAsync()
@@ -96,27 +69,11 @@
         StateHasChanged();
     }
 
-    private async Task GetAllChatRoomsAsync()
+    private async Task GetConversationAsync(string contactId, long conversationId)
     {
-        chatRooms = await SmartChatService.GetAllChatRoomsAsync();
+        selectedContactId = contactId;
+        messages = await SmartChatService.GetConversationAsync(conversationId);
+
         StateHasChanged();
-    }
-
-    private async Task SubscribeToRoom(int roomId)
-    {
-        await SmartChatService.SubscribeToRoom(roomId);
-    }
-
-    private async void OpenNewRoomDialog()
-    {
-        var options = new DialogOptions { CloseOnEscapeKey = true };
-        var dialog = DialogService.Show<NewRoomDialog>();
-
-        var result = await dialog.Result;
-
-        if (!result.Cancelled)
-        {
-            
-        }
     }
 }

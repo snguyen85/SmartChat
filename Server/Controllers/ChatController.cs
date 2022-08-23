@@ -146,12 +146,13 @@ namespace SmartChat.Server.Controllers
         }
 
         /// <summary>
-        /// Get conversation history between this user and another user
+        /// Get conversation history for this user at the specified conversation
+        /// id
         /// </summary>
-        /// <param name="ToUserId"></param>
+        /// <param name="conversationId"></param>
         /// <returns></returns>
-        [HttpGet("{ToUserId}/messages")]
-        public async Task<IActionResult> GetMessages(string ToUserId)
+        [HttpGet("{conversationId}/messages")]
+        public async Task<IActionResult> GetMessages(long conversationId)
         {
             using (var conn = new SqlConnection(_dbConnection))
             {
@@ -160,31 +161,25 @@ namespace SmartChat.Server.Controllers
                 var userId = _userManager.GetUserId(User);
 
                 // get conversation if it exists
+                var query = @"SELECT * 
+                              FROM UserConversations
+                              WHERE ConversationId = @ConversationId AND UserId = @UserId";
 
-                var conversationQuery = @"(SELECT *
-                                           FROM UserConversations
-                                           WHERE UserId = @MyId) first
-                                           INNER JOIN
-                                           (SELECT *
-                                           FROM UserConversations
-                                           WHERE UserId = @TheirId) second
-                                           ON first.ConversationId = second.ConversationId";
-
-                var conversation = conn.QuerySingleOrDefaultAsync<Conversation>(conversationQuery, new { MyId = userId, TheirId = ToUserId });
+                var conversation = await conn.QuerySingleOrDefaultAsync<UserConversation>(query, new { ConversationId = conversationId, UserId = userId });
 
                 if (conversation == null)
                 {
-                    return Ok(); // no conversation between these two people
+                    return BadRequest("No conversation has been started");
                 }
 
-                var conversationsQuery = @"SELECT Messages.Id, Messages.AuthorId, Messages.Content, Messages.Created
+                var conversationsQuery = @"SELECT Messages.Id, Messages.AuthorId, Messages.Content, Messages.Created, AspNetUsers.UserName AS AuthorName
                                            FROM Messages
-                                           INNER JOIN Conversations ON Conversations.Id = UserConversations.ConversationId
-                                           INNER JOIN DirectMessages ON DirectMessages.ConversationId = Messages.ConversationId
-                                           WHERE DirectMessage.ConversationId = @ConversationId";
+                                           INNER JOIN DirectMessages ON DirectMessages.MessageId = Messages.Id
+                                           INNER JOIN AspNetUsers ON AspNetUsers.Id = Messages.AuthorId
+                                           WHERE DirectMessages.ConversationId = @ConversationId";
                 
-                var conversations = await conn.QueryAsync<Message>(conversationsQuery, new { ConversationId = conversation.Id });
-                
+                var conversations = await conn.QueryAsync<ChatMessage>(conversationsQuery, new { ConversationId = conversation.Id });
+
                 return Ok(conversations);
             }
         }
