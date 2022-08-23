@@ -90,11 +90,12 @@ namespace SmartChat.Client
             return data;
         }
 
-        public async Task SaveMessageAsync(Message message)
+        public async Task SaveMessageAsync(long conversationId, string messageContent)
         {
             var client = _clientFactory.CreateClient("SmartChat.Server");
 
-            await client.PostAsJsonAsync("/chat", message);
+            var response = await client.PostAsJsonAsync<string>($"/chat/{conversationId}/messages", messageContent);
+            var content = await response.Content.ReadAsStringAsync();
         }
     }
 }

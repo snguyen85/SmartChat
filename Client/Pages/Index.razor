@@ -12,7 +12,7 @@
 @inject IDialogService DialogService
 
 <div class="d-flex flex-grow-1 flex-row">
-    <Chat Messages="messages" />
+    <Chat ConversationId="selectedConversationId" Messages="messages" ContactName="@selectedContactName" />
     <MudPaper Elevation="25" Class="pa-3 ml-6" MinWidth="400px">
         <MudToolBar Dense="true">
             <MudText Typo="Typo.h6" Inline="true" Class="mr-2">#</MudText>
@@ -50,10 +50,12 @@
 
 @code
 {
-    [Parameter] public string selectedContactId { get; set; }
+    long selectedConversationId = 0;
+    string selectedContactId = "";
+    string selectedContactName = "";
 
-    private List<SmartContact> contacts = new List<SmartContact>();
-    private List<ChatMessage> messages = new List<ChatMessage>();
+    List<SmartContact> contacts = new List<SmartContact>();
+    List<ChatMessage> messages = new List<ChatMessage>();
 
     protected override async Task OnInitializedAsync()
     {
@@ -71,7 +73,10 @@
 
     private async Task GetConversationAsync(string contactId, long conversationId)
     {
+        selectedConversationId = conversationId;
         selectedContactId = contactId;
+        selectedContactName = contacts.FirstOrDefault(c => c.Id == contactId)?.Username;
+
         messages = await SmartChatService.GetConversationAsync(conversationId);
 
         StateHasChanged();

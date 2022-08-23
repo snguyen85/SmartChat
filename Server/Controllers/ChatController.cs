@@ -37,8 +37,8 @@ namespace SmartChat.Server.Controllers
         /// <param name="ToUserId"></param>
         /// <param name=""></param>
         /// <returns></returns>
-        [HttpPost("{ToUserId}/messages")]
-        public async Task<IActionResult> PostMessage(string ToUserId, [FromBody] string messageContent)
+        [HttpPost("{conversationId}/messages")]
+        public async Task<IActionResult> PostMessage(string conversationId, [FromBody] string messageContent)
         {
             using (var conn = new SqlConnection(_dbConnection))
             {
@@ -49,34 +49,36 @@ namespace SmartChat.Server.Controllers
                     return BadRequest("Message content is null or empty");
                 }
 
-                // check if user sending message to exists first
-                var recipient = await _userManager.FindByIdAsync(ToUserId);
+                var conversation = await conn.QueryAsync<Conversation>(@"SELECT * FROM Conversations WHERE Id = @ConversationId", new { ConversationId = conversationId });
 
-                if (recipient == null)
+                if (conversation == null)
                 {
-                    return BadRequest("User sending message to doesn't exist");
+                    return BadRequest("No conversation exists");
                 }
 
                 var authorId = _userManager.GetUserId(User);
 
-                // get conversation if it exists
+                var userConversation = await conn.QueryAsync<UserConversation>(@"SELECT * FROM UserConversations WHERE UserId = @UserId AND ConversationId = @ConversationId",
+                    new { UserId = authorId, ConversationId = conversationId });
 
-                // no conversation yet so created one
+                if (userConversation == null)
+                {
+                    return BadRequest("Not part of the conversation");
+                }
 
                 var insertedRows = await conn.ExecuteAsync(@"INSERT INTO Messages (Content, Created, AuthorId)
-                                                             VALUES (@Content, GETUTCDATE() @AuthorId)
-                                                             INSERT INTO DirectMessages (ToUserId, FromUserId, MessageId)
-                                                             VALUES (@ToUserId, @FromUserId, SCOPE_IDENTITY()", new
+                                                             VALUES (@Content, GETUTCDATE(), @AuthorId)
+                                                             INSERT INTO DirectMessages (ConversationId, MessageId)
+                                                             VALUES (@ConversationId, SCOPE_IDENTITY())", new
                                                           {
                                                               AuthorId = authorId,
                                                               Content = messageContent,
-                                                              ToUserId = recipient.Id,
-                                                              FromUserId = authorId
+                                                              ConversationId = conversationId
                                                           });
 
                 if (insertedRows == 0)
                 {
-                    throw new Exception($"Unexpected response sending message to user: {ToUserId}");
+                    throw new Exception($"Unexpected response sending message to user");
                 }
 
                 return Ok();
@@ -146,8 +148,7 @@ namespace SmartChat.Server.Controllers
         }
 
         /// <summary>
-        /// Get conversation history for this user at the specified conversation
-        /// id
+        /// Get conversation history for this user at the specified conversation ]\id
         /// </summary>
         /// <param name="conversationId"></param>
         /// <returns></returns>
