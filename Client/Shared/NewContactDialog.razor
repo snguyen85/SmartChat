@@ -6,14 +6,14 @@
 <MudDialog>
     <TitleContent>
         <MudText Typo="Typo.h6">
-            Add Chat Room
+            Add Contact
         </MudText>
     </TitleContent>
     <DialogContent>
         <MudText Color="@Color.Error">
             @Error
         </MudText>
-        <MudTextField Label="Room name" @bind-Value="@RoomName" For="@(() => RoomName)" />
+        <MudTextField Label="User name" @bind-Value="@UserName" For="@(() => UserName)" />
     </DialogContent>
     <DialogActions>
         <MudButton OnClick="Cancel">Cancel</MudButton>
@@ -26,25 +26,23 @@
     [CascadingParameter] MudDialogInstance MudDialog { get; set; }
 
     [Required]
-    public string RoomName { get; set; }
+    public string UserName { get; set; }
     string Error { get; set; }
 
     void Cancel() => MudDialog.Cancel();
 
     async void AddChatRoomAsync()
     {
-        var roomId = await SmartChatService.AddRoomAsync(RoomName);
+        var contact = await SmartChatService.AddContactAsync(UserName);
 
-        if (roomId > 0)
+        if (contact != null)
         {
-            Snackbar.Add("Chat room added", Severity.Success);
-            MudDialog.Close(DialogResult.Ok(new Room { Id = roomId, Name = RoomName }));
+            Snackbar.Add("New conversation started", Severity.Success);
+            MudDialog.Close(DialogResult.Ok(contact));
         }
         else
         {
-            Error = "Unable to add room";
+            Error = "Unable to add contact";
         }
     }
 }
-
-

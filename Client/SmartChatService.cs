@@ -1,6 +1,7 @@
 ﻿using SmartChat.Shared.Models;
 using SmartChat.Shared.ViewModels;
 using System.Net.Http.Json;
+using System.Text.Json;
 
 namespace SmartChat.Client
 {
@@ -62,8 +63,7 @@ namespace SmartChat.Client
         /// </summary>
         /// <param name="name"></param>
         /// <returns></returns>
-        /// <exception cref="Exception"></exception>
-        public async Task<Room> AddChatRoomAsync(string name)
+        public async Task<int> AddRoomAsync(string name)
         {
             var client = _clientFactory.CreateClient("SmartChat.Server");
 
@@ -72,14 +72,27 @@ namespace SmartChat.Client
 
             if (response.IsSuccessStatusCode)
             {
-                return new Room
-                {
-                    Id = Convert.ToInt32(content),
-                    Name = name,
-                };
+                return Convert.ToInt32(content);
             }
 
-            throw new Exception($"{content}");
+            return 0;
+        }
+
+        public async Task<SmartContact> AddContactAsync(string name)
+        {
+            var client = _clientFactory.CreateClient("SmartChat.Server");
+
+            var response = await client.PostAsync($"/chat/contact?name={name}", new StringContent(""));
+            var content = await response.Content.ReadAsStringAsync();
+
+            if (response.IsSuccessStatusCode)
+            {
+                var contact = JsonSerializer.Deserialize<SmartContact>(content);
+
+                return contact;
+            }
+
+            return null;
         }
 
         /// <summary>

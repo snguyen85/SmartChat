@@ -89,6 +89,10 @@
                     StateHasChanged();
                 }
             }
+            else
+            {
+            
+            }
         });
 
         var state = await AuthenticationStateProvider.GetAuthenticationStateAsync();
@@ -138,7 +142,7 @@
 
                 if (messageId > 0)
                 {
-                    //await hubConnection.SendAsync("BroadcastMessageAsync", messageSent, ContactId);
+                    await hubConnection.SendAsync("BroadcastRoomMessageAsync", messageSent, RoomId);
 
                     Messages.Add(messageSent);
                 }

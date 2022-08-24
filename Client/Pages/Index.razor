@@ -21,7 +21,7 @@
                 <MudText Typo="Typo.h6" Inline="true" Class="mr-2">#</MudText>
                 <MudText Typo="Typo.h6">conversations</MudText>
                 <MudSpacer />
-                <MudIconButton Icon="@Icons.Material.Outlined.Add" />
+                <MudIconButton Icon="@Icons.Material.Outlined.Add" OnClick="ShowNewContactDialog" />
             </MudToolBar>
             <MudList class="px-4" Clickable="true">
                 @foreach (var contact in contacts)
@@ -50,7 +50,7 @@
                 <MudText Typo="Typo.h6" Inline="true" Class="mr-2">#</MudText>
                 <MudText Typo="Typo.h6">rooms</MudText>
                 <MudSpacer />
-                <MudIconButton Icon="@Icons.Material.Outlined.Add" OnClick="OpenRoomBrowserDialog" />
+                <MudIconButton Icon="@Icons.Material.Outlined.Add" OnClick="ShowNewRoomDialog" />
             </MudToolBar>
             <MudList class="px-4" Clickable="true">
                 @foreach (var room in rooms)
@@ -96,7 +96,7 @@
         var user = state.User;
 
         await GetAllContactsAsync();
-        await GetAllRoomSubscriptions();
+        await GetAllRooms();
     }
 
     private async Task GetAllContactsAsync()
@@ -111,10 +111,10 @@
         StateHasChanged();
     }
 
-    private void OpenRoomBrowserDialog()
+    private async Task GetAllRooms()
     {
-        DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
-        var dialog = DialogService.Show<RoomBrowserDialog>("", maxWidth);
+        rooms = await SmartChatService.GetAllChatRoomsAsync();
+        StateHasChanged();
     }
 
     private async Task GetConversationAsync(string contactId, long conversationId)
@@ -140,5 +140,37 @@
         messages = await SmartChatService.GetRoomMessagesAsync(roomId);
 
         StateHasChanged();
+    }
+
+    private async void ShowNewRoomDialog()
+    {
+        var dialog = DialogService.Show<NewRoomDialog>();
+
+        var result = await dialog.Result;
+
+        if (!result.Cancelled)
+        {
+            var room = (Room)result.Data;
+
+            rooms.Add(room);
+
+            StateHasChanged();
+        }
+    }
+
+    private async void ShowNewContactDialog()
+    {
+        var dialog = DialogService.Show<NewContactDialog>();
+
+        var result = await dialog.Result;
+
+        if (!result.Cancelled)
+        {
+            var contact = (SmartContact)result.Data;
+
+            contacts.Add(contact);
+
+            StateHasChanged();
+        }
     }
 }
