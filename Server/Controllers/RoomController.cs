@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using SmartChat.Shared;
 using SmartChat.Shared.Models;
+using SmartChat.Shared.ViewModels;
 
 namespace SmartChat.Server.Controllers
 {
@@ -61,15 +62,17 @@ namespace SmartChat.Server.Controllers
 
                 var userId = _userManager.GetUserId(User);
 
-                var results = await conn.QueryAsync(@"SELECT Messages.Id, UserName, Content
-                                                      FROM Messages
-                                                      INNER JOIN RoomMessages ON Messages.Id = RoomMessages.MessageId
-                                                      INNER JOIN AspNetUsers ON AspNetUsers.Id = Messages.AuthorId
-                                                      WHERE RoomMessages.RoomId = @RoomId", new
-                                                      {
-                                                        UserId = userId,
-                                                        RoomId = roomId
-                                                      });
+                var getQuery = @"SELECT Messages.Id, Messages.AuthorId, Messages.Content, Messages.Created, AspNetUsers.UserName AS AuthorName
+                                 FROM Messages
+                                 INNER JOIN RoomMessages ON Messages.Id = RoomMessages.MessageId
+                                 INNER JOIN AspNetUsers ON AspNetUsers.Id = Messages.AuthorId
+                                 WHERE RoomMessages.RoomId = @RoomId";
+
+                var results = await conn.QueryAsync<ChatMessage>(getQuery, new {
+                                    UserId = userId,
+                                    RoomId = roomId
+                                });
+
                 return Ok(results);
             }
         }
@@ -114,6 +117,30 @@ namespace SmartChat.Server.Controllers
 
                 return Ok();
             }      
+        }
+
+        /// <summary>
+        /// Get all subscriptions for this user
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet("subscriptions")]
+        public async Task<IActionResult> GetAllSubscriptions()
+        {
+            using (var conn = new SqlConnection(_dbConnection))
+            {
+                await conn.OpenAsync();
+
+                var userId = _userManager.GetUserId(User);
+
+                var query = @"SELECT Rooms.Id, Rooms.Name
+                              FROM RoomMembers
+                              INNER JOIN Rooms ON Rooms.Id = RoomMembers.RoomId
+                              WHERE UserId = @UserId";
+
+                var results = await conn.QueryAsync<Room>(query, new { UserId = userId });
+
+                return Ok(results);
+            }
         }
 
         /// <summary>
@@ -183,22 +210,27 @@ namespace SmartChat.Server.Controllers
 
                 var userId = _userManager.GetUserId(User);
 
-                var insertedRows = await conn.ExecuteAsync(@"INSERT INTO Messages (Content, Created, AuthorId)
-                                                             VALUES (@Content, GETUTCDATE() @UserId)
-                                                             INSERT INTO RoomMessages (RoomId, MessageId)
-                                                             VALUES (@RoomId, SCOPE_IDENTITY()", new
-                                                             {
-                                                                UserId = userId,
-                                                                Content = messageContent,
-                                                                RoomId = room.Id
-                                                             });
+                var insertQuery = @"INSERT INTO Messages (Content, Created, AuthorId)
+                                    VALUES (@Content, GETUTCDATE(), @UserId)
+                                    DECLARE @MessageId BIGINT
+                                    SET @MessageId = SCOPE_IDENTITY()
+                                    INSERT INTO RoomMessages (RoomId, MessageId)
+                                    VALUES (@RoomId, @MessageId)
+                                    SELECT Messages.Id FROM Messages WHERE Messages.Id = @MessageId";
 
-                if (insertedRows == 0)
+
+                var messageId = await conn.ExecuteScalarAsync<Int32>(insertQuery, new {
+                        UserId = userId,
+                        Content = messageContent,
+                        RoomId = room.Id
+                    });
+
+                if (messageId == 0)
                 {
                     throw new Exception($"Unexpected response posting message to room: {room.Id}");
                 }
 
-                return Ok();
+                return Ok(messageId);
             }
         }
     }

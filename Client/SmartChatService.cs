@@ -13,18 +13,38 @@ namespace SmartChat.Client
             _clientFactory = clientFactory;
         }
 
+        /// <summary>
+        /// Return all chat rooms present in the application
+        /// </summary>
+        /// <returns></returns>
         public async Task<List<Room>> GetAllChatRoomsAsync()
         {
             var client = _clientFactory.CreateClient("SmartChat.Server");
-
-            var response = await client.GetAsync($"/room/all");
-            var content = await response.Content.ReadAsStringAsync();
 
             var results = await client.GetFromJsonAsync<List<Room>>($"/room/all");
 
             return results;
         }
 
+        /// <summary>
+        /// Get all rooms that this user is subscribed to
+        /// </summary>
+        /// <param name="userId"></param>
+        /// <returns></returns>
+        public async Task<List<Room>> GetAllRoomSubscriptions()
+        {
+            var client = _clientFactory.CreateClient("SmartChat.Server");
+
+            var results = await client.GetFromJsonAsync<List<Room>>($"/room/subscriptions");
+
+            return results;
+        }
+
+        /// <summary>
+        /// Subscribe this user to receive room notifications for a room
+        /// </summary>
+        /// <param name="roomId"></param>
+        /// <returns></returns>
         public async Task SubscribeToRoom(int roomId)
         {
             var client = _clientFactory.CreateClient("SmartChat.Server");
@@ -37,6 +57,12 @@ namespace SmartChat.Client
             }
         }
 
+        /// <summary>
+        /// Create a chat room
+        /// </summary>
+        /// <param name="name"></param>
+        /// <returns></returns>
+        /// <exception cref="Exception"></exception>
         public async Task<Room> AddChatRoomAsync(string name)
         {
             var client = _clientFactory.CreateClient("SmartChat.Server");
@@ -67,6 +93,11 @@ namespace SmartChat.Client
             return await client.GetFromJsonAsync<List<SmartContact>>($"/chat/contacts");
         }
 
+        /// <summary>
+        /// Get all messages in a conversation
+        /// </summary>
+        /// <param name="conversationId"></param>
+        /// <returns></returns>
         public async Task<List<ChatMessage>> GetConversationAsync(long conversationId)
         {
             var client = _clientFactory.CreateClient("SmartChat.Server");
@@ -74,25 +105,8 @@ namespace SmartChat.Client
             return await client.GetFromJsonAsync<List<ChatMessage>>($"/chat/{conversationId}/messages");
         }
 
-        public async Task<ApplicationUser> GetUserDetailsAsync(string userId)
-        {
-            var client = _clientFactory.CreateClient("SmartChat.Server");
-
-            return await client.GetFromJsonAsync<ApplicationUser>($"/chat/users/{userId}");
-        }
-
-        public async Task<List<ApplicationUser>> GetUsersAsync()
-        {
-            var client = _clientFactory.CreateClient("SmartChat.Server");
-
-            var data = await client.GetFromJsonAsync<List<ApplicationUser>>("/chat/users");
-            
-            return data;
-        }
-
         /// <summary>
-        /// Save the message in the conversation and return the id of the newly created
-        /// message
+        /// Post a message to a user
         /// </summary>
         /// <param name="conversationId"></param>
         /// <param name="messageContent"></param>
@@ -107,6 +121,39 @@ namespace SmartChat.Client
             if (response.IsSuccessStatusCode)
             {
                 return Int64.Parse(content);
+            }
+
+            return 0;
+        }
+
+        /// <summary>
+        /// Get all messages in a room
+        /// </summary>
+        /// <param name="conversationId"></param>
+        /// <returns></returns>
+        public async Task<List<ChatMessage>> GetRoomMessagesAsync(int roomId)
+        {
+            var client = _clientFactory.CreateClient("SmartChat.Server");
+
+            return await client.GetFromJsonAsync<List<ChatMessage>>($"/room/{roomId}/messages");
+        }
+
+        /// <summary>
+        /// Post a message to a room
+        /// </summary>
+        /// <param name="roomId"></param>
+        /// <param name="messageContent"></param>
+        /// <returns></returns>
+        public async Task<int> SaveRoomMessageAsync(int roomId, string messageContent)
+        {
+            var client = _clientFactory.CreateClient("SmartChat.Server");
+
+            var response = await client.PostAsJsonAsync<string>($"/room/{roomId}/messages", messageContent);
+            var content = await response.Content.ReadAsStringAsync();
+
+            if (response.IsSuccessStatusCode)
+            {
+                return Int32.Parse(content);
             }
 
             return 0;

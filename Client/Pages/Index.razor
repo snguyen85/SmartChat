@@ -12,16 +12,18 @@
 @inject IDialogService DialogService
 
 <div class="d-flex flex-grow-1 flex-row">
-    <Chat ConversationId="selectedConversationId" Messages="messages" ContactName="@selectedContactName" ContactId="@selectedContactId" />
+    <Chat ConversationId="selectedConversationId" Messages="messages" 
+          ContactName="@selectedContactName" ContactId="@selectedContactId"
+          Mode = "@selectedMode" RoomId = "@selectedRoomId" />
     <MudPaper Elevation="25" Class="pa-3 ml-6" MinWidth="400px">
-        <MudToolBar Dense="true">
-            <MudText Typo="Typo.h6" Inline="true" Class="mr-2">#</MudText>
-            <MudText Typo="Typo.h6">conversations</MudText>
-            <MudSpacer />
-            <MudIconButton Icon="@Icons.Material.Outlined.Add" />
-        </MudToolBar>
-        <div class="d-flex flex-column px-4" style="max-height:70vh;min-height:70vh; overflow:scroll;">
-            <MudList Clickable="true">
+        <div class="d-flex flex-column" style="max-height:70vh;min-height:70vh; overflow:scroll;">
+            <MudToolBar Dense="true">
+                <MudText Typo="Typo.h6" Inline="true" Class="mr-2">#</MudText>
+                <MudText Typo="Typo.h6">conversations</MudText>
+                <MudSpacer />
+                <MudIconButton Icon="@Icons.Material.Outlined.Add" />
+            </MudToolBar>
+            <MudList class="px-4" Clickable="true">
                 @foreach (var contact in contacts)
                 {
                     <MudListItem Class="pa-0 px-2" OnClick="@(() => GetConversationAsync(contact.Id, contact.ConversationId))">
@@ -44,18 +46,49 @@
                     </MudListItem>
                 }
             </MudList>
+            <MudToolBar class="mt-4" Dense="true">
+                <MudText Typo="Typo.h6" Inline="true" Class="mr-2">#</MudText>
+                <MudText Typo="Typo.h6">rooms</MudText>
+                <MudSpacer />
+                <MudIconButton Icon="@Icons.Material.Outlined.Add" OnClick="OpenRoomBrowserDialog" />
+            </MudToolBar>
+            <MudList class="px-4" Clickable="true">
+                @foreach (var room in rooms)
+                {
+                    <MudListItem Class="pa-0 px-2" OnClick="@(() => GetRoomMessagesAsync(room.Id))">
+                        <div class="d-flex flex-row mt-n1 mb-n1">
+                            <div class="mr-4 my-2">
+                                @if (room.Id == selectedRoomId)
+                                {
+                                    <MudAvatar Color="Color.Secondary" Style="height:50px; width:50px;">@room.Name.ToUpper().FirstOrDefault()</MudAvatar>
+                                }
+                                else
+                                {
+                                    <MudAvatar Color="Color.Dark" Style="height:50px; width:50px;">@room.Name.ToUpper().FirstOrDefault()</MudAvatar>
+                                }
+                            </div>
+                            <div>
+                                <MudText Typo="Typo.body2" Class="mt-3 mb-n2">@room.Name</MudText>
+                            </div>
+                        </div>
+                    </MudListItem>
+                }
+            </MudList>
         </div>
     </MudPaper>
 </div>
 
 @code
 {
+    int selectedRoomId = 0;
     long selectedConversationId = 0;
     string selectedContactId = "";
     string selectedContactName = "";
+    ChatMode selectedMode = ChatMode.UserChat;
 
     List<SmartContact> contacts = new List<SmartContact>();
     List<ChatMessage> messages = new List<ChatMessage>();
+    List<Room> rooms = new List<Room>();
 
     protected override async Task OnInitializedAsync()
     {
@@ -63,6 +96,7 @@
         var user = state.User;
 
         await GetAllContactsAsync();
+        await GetAllRoomSubscriptions();
     }
 
     private async Task GetAllContactsAsync()
@@ -71,13 +105,39 @@
         StateHasChanged();
     }
 
+    private async Task GetAllRoomSubscriptions()
+    {
+        rooms = await SmartChatService.GetAllRoomSubscriptions();
+        StateHasChanged();
+    }
+
+    private void OpenRoomBrowserDialog()
+    {
+        DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var dialog = DialogService.Show<RoomBrowserDialog>("", maxWidth);
+    }
+
     private async Task GetConversationAsync(string contactId, long conversationId)
     {
+        selectedMode = ChatMode.UserChat;
+
         selectedConversationId = conversationId;
         selectedContactId = contactId;
         selectedContactName = contacts.FirstOrDefault(c => c.Id == contactId)?.Username;
 
         messages = await SmartChatService.GetConversationAsync(conversationId);
+
+        StateHasChanged();
+    }
+
+    private async Task GetRoomMessagesAsync(int roomId)
+    {
+        selectedMode = ChatMode.RoomChat;
+
+        selectedRoomId = roomId;
+        selectedContactName = rooms.FirstOrDefault(c => c.Id == roomId)?.Name;
+
+        messages = await SmartChatService.GetRoomMessagesAsync(roomId);
 
         StateHasChanged();
     }

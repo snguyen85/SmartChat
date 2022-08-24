@@ -50,10 +50,13 @@
 @code {
     [CascadingParameter] public HubConnection hubConnection { get; set; }
 
+    [Parameter] public ChatMode Mode { get; set; }
+
     [Parameter] public string CurrentMessage { get; set; }
     [Parameter] public string ContactName { get; set; }
     [Parameter] public string ContactId { get; set; }
     [Parameter] public long ConversationId { get; set; }
+    [Parameter] public int RoomId {  get;  set; }
     [Parameter] public List<ChatMessage> Messages { get; set; } = new List<ChatMessage>();
 
     private string currentUserId = "";
@@ -77,11 +80,14 @@
 
         hubConnection.On<ChatMessage>("ChatNotification", async (message) =>
         {
-            if (message.ConversationId == ConversationId)
+            if (Mode == ChatMode.UserChat)
             {
-                Messages.Add(message);
+                if (message.ConversationId == ConversationId)
+                {
+                    Messages.Add(message);
 
-                StateHasChanged();
+                    StateHasChanged();
+                }
             }
         });
 
@@ -94,26 +100,53 @@
 
     private async Task SubmitAsync()
     {
-        if (!string.IsNullOrEmpty(CurrentMessage) && ConversationId > 0)
+        if (Mode == ChatMode.UserChat)
         {
-            var messageId = await SmartChatService.SaveMessageAsync(ConversationId, CurrentMessage);
-            var messageSent = new ChatMessage { 
-                    Id = messageId,
-                    AuthorName = currentUserName,
-                    ConversationId = ConversationId,
-                    Content = CurrentMessage,
-                    Created = DateTime.UtcNow };
-
-            if (messageId > 0)
+            if (!string.IsNullOrEmpty(CurrentMessage) && ConversationId > 0)
             {
-                await hubConnection.SendAsync("BroadcastMessageAsync", messageSent, ContactId);
+                var messageId = await SmartChatService.SaveMessageAsync(ConversationId, CurrentMessage);
+                var messageSent = new ChatMessage { 
+                        Id = messageId,
+                        AuthorName = currentUserName,
+                        ConversationId = ConversationId,
+                        Content = CurrentMessage,
+                        Created = DateTime.UtcNow };
 
-                Messages.Add(messageSent);
+                if (messageId > 0)
+                {
+                    await hubConnection.SendAsync("BroadcastMessageAsync", messageSent, ContactId);
+
+                    Messages.Add(messageSent);
+                }
+
+                CurrentMessage = string.Empty;
+
+                StateHasChanged();
             }
+        }
+        else
+        {
+            if (!string.IsNullOrEmpty(CurrentMessage) && RoomId > 0)
+            {
+                var messageId = await SmartChatService.SaveRoomMessageAsync(RoomId, CurrentMessage);
+                
+                var messageSent = new ChatMessage { 
+                        Id = messageId,
+                        AuthorName = currentUserName,
+                        Content = CurrentMessage,
+                        Created = DateTime.UtcNow };
 
-            CurrentMessage = string.Empty;
+                if (messageId > 0)
+                {
+                    //await hubConnection.SendAsync("BroadcastMessageAsync", messageSent, ContactId);
 
-            StateHasChanged();
+                    Messages.Add(messageSent);
+                }
+
+                CurrentMessage = string.Empty;
+
+                StateHasChanged();
+            }
         }
     }
 }
