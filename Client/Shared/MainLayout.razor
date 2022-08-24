@@ -60,6 +60,23 @@
             });
         });
 
+        hubConnection.On<ChatMessage, Room>("RoomNotification", async (message, room) =>
+        {
+            SnackBar.Add($"New Message In {room.Name}", Severity.Info, config =>
+            {
+                config.VisibleStateDuration = 10000;
+                config.HideTransitionDuration = 500;
+                config.ShowTransitionDuration = 500;
+                config.Action = "Chat?";
+                config.ActionColor = Color.Info;
+                config.Onclick = snackbar =>
+                {
+                    NavigationManager.NavigateTo($"chat/{message.ConversationId}");
+                    return Task.CompletedTask;
+                };
+            });
+        });
+
         var state = await AuthenticationStateProvider.GetAuthenticationStateAsync();
         var user = state.User;
         currentUserId = user.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;

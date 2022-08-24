@@ -89,9 +89,18 @@
                     StateHasChanged();
                 }
             }
-            else
+        });
+
+        hubConnection.On<ChatMessage, Room>("RoomNotification", async (message, room) =>
+        {
+            if (Mode == ChatMode.RoomChat)
             {
-            
+                if (room.Id == RoomId)
+                {
+                    Messages.Add(message);
+
+                    StateHasChanged();
+                }
             }
         });
 

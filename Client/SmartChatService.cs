@@ -46,16 +46,19 @@ namespace SmartChat.Client
         /// </summary>
         /// <param name="roomId"></param>
         /// <returns></returns>
-        public async Task SubscribeToRoom(int roomId)
+        public async Task<int> SubscribeToRoom(int roomId)
         {
             var client = _clientFactory.CreateClient("SmartChat.Server");
 
             var response = await client.PostAsync($"/room/{roomId}/subscribe", new StringContent(""));
+            var content = await response.Content.ReadAsStringAsync();
 
             if (response.IsSuccessStatusCode)
             {
-
+                return Convert.ToInt32(content);
             }
+
+            return 0;
         }
 
         /// <summary>
@@ -82,7 +85,7 @@ namespace SmartChat.Client
         {
             var client = _clientFactory.CreateClient("SmartChat.Server");
 
-            var response = await client.PostAsync($"/chat/contact?name={name}", new StringContent(""));
+            var response = await client.PostAsync($"/chat/{name}/contacts", new StringContent(""));
             var content = await response.Content.ReadAsStringAsync();
 
             if (response.IsSuccessStatusCode)

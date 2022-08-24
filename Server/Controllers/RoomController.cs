@@ -89,7 +89,7 @@ namespace SmartChat.Server.Controllers
             {
                 await conn.OpenAsync();
 
-                // check if membership to room already exists
+                // check if room exists
                 var room = await conn.QuerySingleOrDefaultAsync<Room>(@"SELECT Id, Name FROM Rooms WHERE Id = @RoomId;", new
                 {
                     RoomId = roomId
@@ -102,20 +102,33 @@ namespace SmartChat.Server.Controllers
 
                 var userId = _userManager.GetUserId(User);
 
-                // if not add to room membership
-                var insertedRow = await conn.ExecuteAsync(@"INSERT INTO RoomMembers (UserId, RoomId)
-                                                            VALUES (@UserId, @RoomId)", new
-                                                            {
-                                                                RoomId = roomId,
-                                                                UserId = userId
-                                                            });
+                // check if room membership already exists
+                var roomQuery = @"SELECT RoomId
+                                  FROM RoomMembers
+                                  WHERE UserId = @MyId";
 
-                if (insertedRow == 0)
+                var membershipId = await conn.ExecuteScalarAsync<int?>(roomQuery, new { MyId = userId });
+
+                // contact already exists
+                if (membershipId.HasValue)
+                {
+                    return Ok(membershipId);
+                }
+
+                // if not add to room membership
+                membershipId = await conn.ExecuteScalarAsync<int?>(@"INSERT INTO RoomMembers (UserId, RoomId)
+                                                                     VALUES (@UserId, @RoomId)
+                                                                     SELECT SCOPE_IDENTITY()", new { 
+                                                                         RoomId = roomId,
+                                                                         UserId = userId
+                                                                     });
+
+                if (!membershipId.HasValue)
                 {
                     throw new Exception($"Unexpected response adding user: {userId} to room: {roomId}");
                 }
 
-                return Ok();
+                return Ok(membershipId);
             }      
         }
 
@@ -219,13 +232,13 @@ namespace SmartChat.Server.Controllers
                                     SELECT Messages.Id FROM Messages WHERE Messages.Id = @MessageId";
 
 
-                var messageId = await conn.ExecuteScalarAsync<Int32>(insertQuery, new {
+                var messageId = await conn.ExecuteScalarAsync<Int64?>(insertQuery, new {
                         UserId = userId,
                         Content = messageContent,
                         RoomId = room.Id
                     });
 
-                if (messageId == 0)
+                if (!messageId.HasValue)
                 {
                     throw new Exception($"Unexpected response posting message to room: {room.Id}");
                 }

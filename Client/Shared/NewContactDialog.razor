@@ -17,7 +17,7 @@
     </DialogContent>
     <DialogActions>
         <MudButton OnClick="Cancel">Cancel</MudButton>
-        <MudButton Color="Color.Error" OnClick="() => AddChatRoomAsync()">Add Room</MudButton>
+        <MudButton Color="Color.Error" OnClick="() => AddContactAsync()">Add Contact</MudButton>
     </DialogActions>
 </MudDialog>
 
@@ -31,7 +31,7 @@
 
     void Cancel() => MudDialog.Cancel();
 
-    async void AddChatRoomAsync()
+    async void AddContactAsync()
     {
         var contact = await SmartChatService.AddContactAsync(UserName);
 

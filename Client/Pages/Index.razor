@@ -31,15 +31,15 @@
                             <div class="mr-4 my-2">
                                 @if (contact.Id == selectedContactId)
                                 {
-                                    <MudAvatar Color="Color.Secondary" Style="height:50px; width:50px;">@contact.Username.ToUpper().FirstOrDefault()</MudAvatar>
+                                    <MudAvatar Color="Color.Secondary" Style="height:50px; width:50px;">@contact.UserName.ToUpper().FirstOrDefault()</MudAvatar>
                                 }
                                 else
                                 {
-                                    <MudAvatar Color="Color.Dark" Style="height:50px; width:50px;">@contact.Username.ToUpper().FirstOrDefault()</MudAvatar>
+                                    <MudAvatar Color="Color.Dark" Style="height:50px; width:50px;">@contact.UserName.ToUpper().FirstOrDefault()</MudAvatar>
                                 }
                             </div>
                             <div>
-                                <MudText Typo="Typo.body2" Class="mt-3 mb-n2">@contact.Username</MudText>
+                                <MudText Typo="Typo.body2" Class="mt-3 mb-n2">@contact.UserName</MudText>
                                 <MudText Typo="Typo.caption" Style="font-size: xx-small!important;">@contact.Id</MudText>
                             </div>
                         </div>
@@ -69,6 +69,9 @@
                             </div>
                             <div>
                                 <MudText Typo="Typo.body2" Class="mt-3 mb-n2">@room.Name</MudText>
+                                <MudText Typo="Typo.caption" Style="font-size: xx-small!important;">
+                                    @(subscriptions.Exists(s => s.Id == room.Id) ? "subscribed" : "not subscribed")
+                                 </MudText>
                             </div>
                         </div>
                     </MudListItem>
@@ -89,6 +92,7 @@
     List<SmartContact> contacts = new List<SmartContact>();
     List<ChatMessage> messages = new List<ChatMessage>();
     List<Room> rooms = new List<Room>();
+    List<Room> subscriptions = new List<Room>();
 
     protected override async Task OnInitializedAsync()
     {
@@ -97,6 +101,7 @@
 
         await GetAllContactsAsync();
         await GetAllRooms();
+        await GetAllRoomSubscriptions();
     }
 
     private async Task GetAllContactsAsync()
@@ -107,7 +112,7 @@
 
     private async Task GetAllRoomSubscriptions()
     {
-        rooms = await SmartChatService.GetAllRoomSubscriptions();
+        subscriptions = await SmartChatService.GetAllRoomSubscriptions();
         StateHasChanged();
     }
 
@@ -121,9 +126,11 @@
     {
         selectedMode = ChatMode.UserChat;
 
+        selectedRoomId = 0;
+
         selectedConversationId = conversationId;
         selectedContactId = contactId;
-        selectedContactName = contacts.FirstOrDefault(c => c.Id == contactId)?.Username;
+        selectedContactName = contacts.FirstOrDefault(c => c.Id == contactId)?.UserName;
 
         messages = await SmartChatService.GetConversationAsync(conversationId);
 
@@ -133,6 +140,8 @@
     private async Task GetRoomMessagesAsync(int roomId)
     {
         selectedMode = ChatMode.RoomChat;
+
+        selectedContactId = "";
 
         selectedRoomId = roomId;
         selectedContactName = rooms.FirstOrDefault(c => c.Id == roomId)?.Name;
@@ -168,7 +177,10 @@
         {
             var contact = (SmartContact)result.Data;
 
-            contacts.Add(contact);
+            if (!contacts.Exists(c => c.Id == contact.Id))
+            {
+                contacts.Add(contact);
+            }
 
             StateHasChanged();
         }

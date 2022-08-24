@@ -78,12 +78,12 @@ namespace SmartChat.Server.Controllers
                                     VALUES (@ConversationId, @MessageId)
                                     SELECT Messages.Id FROM Messages WHERE Messages.Id = @MessageId";
 
-                var messageId = await conn.ExecuteScalarAsync<Int64>(insertQuery, new { AuthorId = authorId,
+                var messageId = await conn.ExecuteScalarAsync<Int64?>(insertQuery, new { AuthorId = authorId,
                     Content = messageContent,
                     ConversationId = conversationId
                 });
 
-                if (messageId == 0)
+                if (!messageId.HasValue)
                 {
                     throw new Exception($"Unexpected response sending message to user");
                 }
@@ -151,6 +151,65 @@ namespace SmartChat.Server.Controllers
                 var conversationMessages = await conn.QueryAsync<ChatMessage>(messageQuery, new { ConversationIds = conversations });
 
                 return Ok(conversationMessages);
+            }
+        }
+
+        /// <summary>
+        /// Add a conversation between this user and the specified user
+        /// </summary>
+        /// <param name="userName"></param>
+        /// <returns></returns>
+        [HttpPost("{username}/contacts")]
+        public async Task<IActionResult> AddContact(string userName)
+        {
+            using (var conn = new SqlConnection(_dbConnection))
+            {
+                await conn.OpenAsync();
+
+                var contactUser = await _userManager.FindByNameAsync(userName);
+
+                if (contactUser == null)
+                {
+                    return BadRequest("Contact not found");
+                }
+
+                var userId = _userManager.GetUserId(User);
+
+                // check if contact already exists
+                var conversationQuery = @"SELECT ConversationId
+                                          FROM UserConversations
+                                          WHERE UserId = @MyId
+                                          INTERSECT
+                                          SELECT ConversationId
+                                          FROM UserConversations
+                                          WHERE UserId = @TheirId";
+
+                var conversationId = await conn.ExecuteScalarAsync<Int64?>(conversationQuery, new { MyId = userId, TheirId = contactUser.Id });
+
+                // contact already exists
+                if (conversationId.HasValue) 
+                {
+                    return Ok(conversationId);
+                }
+
+                var insertQuery = @"INSERT INTO Conversations (Created)
+                                    VALUES (GETUTCDATE())
+                                    DECLARE @ConversationId BIGINT
+                                    SET @ConversationId = SCOPE_IDENTITY()
+                                    INSERT INTO UserConversations (ConversationId, UserId)
+                                    VALUES (@ConversationId, @MyId)
+                                    INSERT INTO UserConversations (ConversationId, UserId)
+                                    Values (@ConversationId, @TheirId)
+                                    SELECT Conversations.Id FROM Conversations WHERE Conversations.Id = @ConversationId";
+
+                conversationId = await conn.ExecuteScalarAsync<Int64?>(insertQuery, new { MyId = userId, TheirId = contactUser.Id });
+
+                if (!conversationId.HasValue)
+                {
+                    throw new Exception($"Unexpected response adding contact");
+                }
+
+                return Ok(new SmartContact { ConversationId = conversationId.Value, Id = contactUser.Id, UserName = contactUser.UserName });
             }
         }
 

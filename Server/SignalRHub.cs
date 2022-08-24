@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Data.SqlClient;
+using SmartChat.Shared.Models;
 using SmartChat.Shared.ViewModels;
 using System.Security.Claims;
 
@@ -59,9 +60,11 @@ namespace SmartChat.Server
                 // everyone but the caller of this method
                 subscribers = await conn.QueryAsync<string>(query, new { RoomId = roomId, UserId = (String.IsNullOrEmpty(userId)) ? string.Empty : userId });
 
+                var roomName = await conn.ExecuteScalarAsync<string>(@"SELECT Rooms.Name FROM Rooms WHERE Rooms.Id = @RoomId", new { RoomId = roomId });
+
                 foreach (var subscriber in subscribers)
                 {
-                    await Clients.User(subscriber).SendAsync("ChatNotification", message);
+                    await Clients.User(subscriber).SendAsync("RoomNotification", message, new Room { Id = roomId, Name = roomName });
                 }
             }
         }
