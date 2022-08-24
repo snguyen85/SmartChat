@@ -69,9 +69,16 @@
                             </div>
                             <div>
                                 <MudText Typo="Typo.body2" Class="mt-3 mb-n2">@room.Name</MudText>
-                                <MudText Typo="Typo.caption" Style="font-size: xx-small!important;">
-                                    @(subscriptions.Exists(s => s.Id == room.Id) ? "subscribed" : "not subscribed")
-                                 </MudText>
+                            </div>
+                            <div>
+                                @if (subscriptions.Exists(s => s.Id == room.Id))
+                                {
+                                    <MudIconButton Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Primary" Size="Size.Medium"/>
+                                }
+                                else
+                                {
+                                    <MudIconButton Icon="@Icons.Material.Outlined.CheckCircle" Color="Color.Primary" Size="Size.Medium" OnClick="@(() => Subscribe(room.Id))"/>
+                                }
                             </div>
                         </div>
                     </MudListItem>
@@ -184,5 +191,17 @@
 
             StateHasChanged();
         }
+    }
+
+    private async Task Subscribe(int roomId)
+    {
+        var subscriptionId = await SmartChatService.SubscribeToRoom(roomId);
+
+        if (subscriptionId > 0)
+        {
+            subscriptions.Add(new Room { Id = roomId });
+        }
+
+        StateHasChanged();
     }
 }

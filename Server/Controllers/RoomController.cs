@@ -105,9 +105,9 @@ namespace SmartChat.Server.Controllers
                 // check if room membership already exists
                 var roomQuery = @"SELECT RoomId
                                   FROM RoomMembers
-                                  WHERE UserId = @MyId";
+                                  WHERE UserId = @MyId AND RoomId = @RoomId";
 
-                var membershipId = await conn.ExecuteScalarAsync<int?>(roomQuery, new { MyId = userId });
+                var membershipId = await conn.ExecuteScalarAsync<int?>(roomQuery, new { MyId = userId, RoomId = roomId });
 
                 // contact already exists
                 if (membershipId.HasValue)
