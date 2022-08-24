@@ -84,7 +84,10 @@
             {
                 if (message.ConversationId == ConversationId)
                 {
-                    Messages.Add(message);
+                    if (!Messages.Exists(m => m.Id == message.Id))
+                    {
+                        Messages.Add(message);
+                    }
 
                     StateHasChanged();
                 }
@@ -129,7 +132,10 @@
                 {
                     await hubConnection.SendAsync("BroadcastMessageAsync", messageSent, ContactId);
 
-                    Messages.Add(messageSent);
+                    if (!Messages.Exists(m => m.Id == messageSent.Id))
+                    {
+                        Messages.Add(messageSent);
+                    }
                 }
 
                 CurrentMessage = string.Empty;
