@@ -1,8 +1,8 @@
 # Chat Server
 
-A simple multi-user chat server and supporting APIs that allow users to communicate in real time across chat rooms or directly with each other.
+A simple multi-user chat server, supporting APIs, and client that allow users to communicate in real time across chat rooms or directly with each other.
 
-## Featuresaaaa
+## Features
 - **User Authentication**  
   - Sign in and sign out.
 
