@@ -1,4 +1,4 @@
-# Chat Server
+# Smart Chat
 
 A simple multi-user chat server, supporting APIs, and client that allow users to communicate in real time across chat rooms or directly with each other.
 
